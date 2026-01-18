@@ -1,0 +1,82 @@
+syntax = "proto3";
+
+package orchion.v1;
+
+option go_package = "github.com/Orchion/Orchion/api/proto/v1;orchionv1";
+
+import "google/protobuf/timestamp.proto";
+
+// OrchestratorService defines the main orchestrator gRPC API
+service OrchestratorService {
+  // RegisterNode registers a new node with the orchestrator
+  rpc RegisterNode(RegisterNodeRequest) returns (RegisterNodeResponse);
+  
+  // Heartbeat sends a heartbeat from a node to indicate it's alive
+  rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse);
+  
+  // UnregisterNode removes a node from the orchestrator
+  rpc UnregisterNode(UnregisterNodeRequest) returns (UnregisterNodeResponse);
+  
+  // ListNodes returns all registered nodes
+  rpc ListNodes(ListNodesRequest) returns (ListNodesResponse);
+}
+
+// NodeInfo contains information about a registered node
+message NodeInfo {
+  string node_id = 1;
+  string address = 2;
+  map<string, string> metadata = 3;
+  NodeStatus status = 4;
+  google.protobuf.Timestamp registered_at = 5;
+  google.protobuf.Timestamp last_heartbeat = 6;
+}
+
+// NodeStatus represents the current status of a node
+enum NodeStatus {
+  NODE_STATUS_UNSPECIFIED = 0;
+  NODE_STATUS_ACTIVE = 1;
+  NODE_STATUS_INACTIVE = 2;
+  NODE_STATUS_DISCONNECTED = 3;
+}
+
+// RegisterNodeRequest is the request to register a new node
+message RegisterNodeRequest {
+  string address = 1;
+  map<string, string> metadata = 2;
+}
+
+// RegisterNodeResponse contains the newly assigned node ID
+message RegisterNodeResponse {
+  string node_id = 1;
+}
+
+// HeartbeatRequest is sent by nodes to indicate they are alive
+message HeartbeatRequest {
+  string node_id = 1;
+}
+
+// HeartbeatResponse acknowledges the heartbeat
+message HeartbeatResponse {
+  bool acknowledged = 1;
+}
+
+// UnregisterNodeRequest removes a node from the orchestrator
+message UnregisterNodeRequest {
+  string node_id = 1;
+}
+
+// UnregisterNodeResponse confirms node removal
+message UnregisterNodeResponse {
+  bool success = 1;
+}
+
+// ListNodesRequest is the request to list all nodes
+message ListNodesRequest {
+  // Filter by status (optional)
+  NodeStatus status_filter = 1;
+}
+
+// ListNodesResponse returns all registered nodes
+message ListNodesResponse {
+  repeated NodeInfo nodes = 1;
+}
