@@ -14,7 +14,7 @@ proto:
 		api/proto/v1/*.proto
 
 # Build the orchestrator binary
-build:
+build: proto
 	@echo "Building orchestrator..."
 	go build -o bin/orchestrator cmd/orchestrator/main.go
 
