@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+package orchion.v1;
+
+option go_package = "github.com/Orchion/Orchion/shared/proto/v1;v1";
+
+// --- Messages ---
+
+message Capabilities {
+  string cpu = 1;
+  string memory = 2;
+  string os = 3;
+}
+
+message Node {
+  string id = 1;
+  string hostname = 2;
+  Capabilities capabilities = 3;
+  int64 last_seen_unix = 4;
+}
+
+// --- RPC Requests/Responses ---
+
+message RegisterNodeRequest {
+  Node node = 1;
+}
+
+message RegisterNodeResponse {}
+
+message HeartbeatRequest {
+  string node_id = 1;
+}
+
+message HeartbeatResponse {}
+
+message ListNodesRequest {}
+
+message ListNodesResponse {
+  repeated Node nodes = 1;
+}
+
+// --- Service ---
+
+service Orchestrator {
+  rpc RegisterNode(RegisterNodeRequest) returns (RegisterNodeResponse);
+  rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse);
+  rpc ListNodes(ListNodesRequest) returns (ListNodesResponse);
+}
