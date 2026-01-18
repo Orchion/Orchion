@@ -1,2 +1,16 @@
-<h1>Welcome to SvelteKit</h1>
-<p>Visit <a href="https://svelte.dev/docs/kit">svelte.dev/docs/kit</a> to read the documentation</p>
+<script>
+  import { getNodes } from "$lib/orchion";
+  let nodes = [];
+
+  onMount(async () => {
+    nodes = await getNodes();
+  });
+</script>
+
+<h1>Orchion Nodes</h1>
+
+<ul>
+  {#each nodes as node}
+    <li>{node.id} — {node.status}</li>
+  {/each}
+</ul>
