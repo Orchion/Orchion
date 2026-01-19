@@ -9,15 +9,82 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "orchion-tools.helloWorld",
-        "title": "Hello World"
+        "command": "orchion.openChat",
+        "title": "Open Chat",
+        "icon": "$(comment-discussion)"
+      },
+      {
+        "command": "orchion.promptAgent",
+        "title": "Prompt Agent"
+      },
+      {
+        "command": "orchion.refreshNodes",
+        "title": "Refresh Nodes"
+      },
+      {
+        "command": "orchion.refreshAgents",
+        "title": "Refresh Agents"
+      },
+      {
+        "command": "orchion.clearLogs",
+        "title": "Clear Logs"
       }
-    ]
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "orchion",
+          "title": "Orchion",
+          "icon": "$(server)"
+        }
+      ]
+    },
+    "views": {
+      "orchion": [
+        {
+          "id": "orchionCluster",
+          "name": "Cluster",
+          "when": "true"
+        },
+        {
+          "id": "orchionAgents",
+          "name": "Agents",
+          "when": "true"
+        },
+        {
+          "id": "orchionLogs",
+          "name": "Logs",
+          "when": "true"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Orchion",
+      "properties": {
+        "orchion.orchestratorUrl": {
+          "type": "string",
+          "default": "http://localhost:8080",
+          "description": "URL of the Orchion orchestrator API"
+        },
+        "orchion.defaultModel": {
+          "type": "string",
+          "default": "llama3.2",
+          "description": "Default model to use for chat completions"
+        },
+        "orchion.refreshInterval": {
+          "type": "number",
+          "default": 5000,
+          "description": "Auto-refresh interval for tree views (milliseconds)"
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run package",

@@ -1,4 +1,6 @@
 const esbuild = require("esbuild");
+const fs = require("fs");
+const path = require("path");
 
 const production = process.argv.includes('--production');
 const watch = process.argv.includes('--watch');
@@ -24,10 +26,9 @@ const esbuildProblemMatcherPlugin = {
 };
 
 async function main() {
-	const ctx = await esbuild.context({
-		entryPoints: [
-			'src/extension.ts'
-		],
+	// Build extension
+	const extensionCtx = await esbuild.context({
+		entryPoints: ['src/extension.ts'],
 		bundle: true,
 		format: 'cjs',
 		minify: production,
@@ -37,16 +38,49 @@ async function main() {
 		outfile: 'dist/extension.js',
 		external: ['vscode'],
 		logLevel: 'silent',
-		plugins: [
-			/* add to the end of plugins array */
-			esbuildProblemMatcherPlugin,
-		],
+		plugins: [esbuildProblemMatcherPlugin],
 	});
+
+	// Build webview
+	const webviewCtx = await esbuild.context({
+		entryPoints: ['src/webviews/chat/main.ts'],
+		bundle: true,
+		format: 'iife',
+		minify: production,
+		sourcemap: !production,
+		sourcesContent: false,
+		platform: 'browser',
+		outfile: 'dist/webviews/chat/main.js',
+		logLevel: 'silent',
+		plugins: [esbuildProblemMatcherPlugin],
+	});
+
+	// Copy CSS files
+	const copyCss = () => {
+		const cssSource = path.join(__dirname, 'src', 'webviews', 'chat', 'styles.css');
+		const cssDest = path.join(__dirname, 'dist', 'webviews', 'chat', 'styles.css');
+		const destDir = path.dirname(cssDest);
+		if (!fs.existsSync(destDir)) {
+			fs.mkdirSync(destDir, { recursive: true });
+		}
+		fs.copyFileSync(cssSource, cssDest);
+	};
+
 	if (watch) {
-		await ctx.watch();
+		copyCss();
+		// Watch for CSS changes
+		fs.watchFile(cssSource, () => {
+			copyCss();
+			console.log('[watch] CSS copied');
+		});
+		await Promise.all([extensionCtx.watch(), webviewCtx.watch()]);
 	} else {
-		await ctx.rebuild();
-		await ctx.dispose();
+		copyCss();
+		await Promise.all([
+			extensionCtx.rebuild(),
+			webviewCtx.rebuild(),
+		]);
+		await Promise.all([extensionCtx.dispose(), webviewCtx.dispose()]);
 	}
 }
 

@@ -69,6 +69,7 @@ func (r *InMemoryRegistry) List() []*pb.Node {
 			Hostname:      node.Hostname,
 			Capabilities:  node.Capabilities,
 			LastSeenUnix:  node.LastSeenUnix,
+			AgentAddress:  node.AgentAddress,
 		})
 	}
 	return nodes
@@ -90,6 +91,7 @@ func (r *InMemoryRegistry) Get(nodeID string) (*pb.Node, bool) {
 		Hostname:     node.Hostname,
 		Capabilities: node.Capabilities,
 		LastSeenUnix: node.LastSeenUnix,
+		AgentAddress: node.AgentAddress,
 	}, true
 }
 

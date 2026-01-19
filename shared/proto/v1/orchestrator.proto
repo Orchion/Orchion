@@ -17,6 +17,7 @@ message Node {
   string hostname = 2;
   Capabilities capabilities = 3;
   int64 last_seen_unix = 4;
+  string agent_address = 5; // gRPC address for NodeAgent service (e.g., "hostname:50052")
 }
 
 // --- RPC Requests/Responses ---
@@ -39,10 +40,68 @@ message ListNodesResponse {
   repeated Node nodes = 1;
 }
 
+// --- LLM API Messages ---
+
+message ChatMessage {
+  string role = 1;    // "system", "user", "assistant"
+  string content = 2;
+}
+
+message ChatCompletionRequest {
+  string model = 1;
+  repeated ChatMessage messages = 2;
+  float temperature = 3;
+  bool stream = 4;
+  int32 max_tokens = 5;
+}
+
+message ChatChoice {
+  int32 index = 1;
+  ChatMessage message = 2;
+  string finish_reason = 3;  // "stop", "length", etc.
+}
+
+message ChatCompletionResponse {
+  string id = 1;
+  string model = 2;
+  repeated ChatChoice choices = 3;
+  int64 created = 4;
+  string object = 5;  // "chat.completion" or "chat.completion.chunk"
+}
+
+message EmbeddingRequest {
+  string model = 1;
+  repeated string input = 2;
+}
+
+message Embedding {
+  repeated float embedding = 1;
+  int32 index = 2;
+}
+
+message EmbeddingResponse {
+  string model = 1;
+  repeated Embedding data = 2;
+  string object = 3;  // "list"
+  int32 usage_prompt_tokens = 4;
+}
+
 // --- Service ---
 
 service Orchestrator {
   rpc RegisterNode(RegisterNodeRequest) returns (RegisterNodeResponse);
   rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse);
   rpc ListNodes(ListNodesRequest) returns (ListNodesResponse);
+}
+
+// OrchionLLM service for OpenAI-compatible API
+service OrchionLLM {
+  rpc ChatCompletion(ChatCompletionRequest) returns (stream ChatCompletionResponse);
+  rpc Embeddings(EmbeddingRequest) returns (EmbeddingResponse);
+}
+
+// NodeAgent service exposed by node agents for inference
+service NodeAgent {
+  rpc ChatCompletion(ChatCompletionRequest) returns (stream ChatCompletionResponse);
+  rpc Embeddings(EmbeddingRequest) returns (EmbeddingResponse);
 }

@@ -15,14 +15,18 @@ import (
 	"google.golang.org/grpc"
 
 	pb "github.com/Orchion/Orchion/orchestrator/api/v1/v1"
+	"github.com/Orchion/Orchion/orchestrator/internal/gateway"
+	"github.com/Orchion/Orchion/orchestrator/internal/llm"
 	"github.com/Orchion/Orchion/orchestrator/internal/node"
 	"github.com/Orchion/Orchion/orchestrator/internal/orchestrator"
+	"github.com/Orchion/Orchion/orchestrator/internal/scheduler"
 )
 
 var (
 	port             = flag.String("port", "50051", "gRPC server port")
 	httpPort         = flag.String("http-port", "8080", "HTTP REST API port")
 	heartbeatTimeout = flag.Duration("heartbeat-timeout", 30*time.Second, "Node heartbeat timeout duration")
+	apiKey           = flag.String("api-key", "", "Optional API key for authentication (leave empty to disable)")
 )
 
 func main() {
@@ -39,6 +43,12 @@ func main() {
 	// Create orchestrator service
 	service := orchestrator.NewService(registry)
 
+	// Create scheduler
+	sched := scheduler.NewSimpleScheduler()
+
+	// Create LLM service
+	llmService := llm.NewService(registry, sched)
+
 	// Setup gRPC server
 	grpcLis, err := net.Listen("tcp", ":"+*port)
 	if err != nil {
@@ -47,9 +57,12 @@ func main() {
 
 	grpcServer := grpc.NewServer()
 	pb.RegisterOrchestratorServer(grpcServer, service)
+	pb.RegisterOrchionLLMServer(grpcServer, llmService)
 
 	// Setup HTTP REST API server
 	mux := http.NewServeMux()
+	
+	// Dashboard API
 	mux.HandleFunc("/api/nodes", func(w http.ResponseWriter, r *http.Request) {
 		// Add CORS headers
 		w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -77,6 +90,15 @@ func main() {
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(resp.Nodes)
 	})
+
+	// OpenAI-compatible API Gateway
+	gateway := gateway.NewGateway("localhost:" + *port)
+	if *apiKey != "" {
+		gateway.SetAPIKey(*apiKey)
+		log.Printf("API key authentication enabled")
+	}
+	mux.HandleFunc("/v1/chat/completions", gateway.ChatCompletionsHandler)
+	mux.HandleFunc("/v1/embeddings", gateway.EmbeddingsHandler)
 
 	httpServer := &http.Server{
 		Addr:    ":" + *httpPort,
