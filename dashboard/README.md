@@ -7,6 +7,7 @@ Web-based UI for monitoring and managing Orchion clusters. Built with SvelteKit.
 ## Overview
 
 The Orchion dashboard provides:
+
 - Real-time node list with health and capabilities
 - Cluster overview and status
 - (Future) Job queue and execution history
@@ -16,6 +17,7 @@ The Orchion dashboard provides:
 **Current Status:** ✅ Basic node list implemented. Advanced features planned.
 
 **Tech Stack:**
+
 - **SvelteKit** - Full-stack Svelte framework
 - **TypeScript** - Type safety
 - **Vite** - Build tool and dev server
@@ -55,11 +57,13 @@ npm install
 ### Run Development Server
 
 **Option 1: Using the script (recommended)**
+
 ```powershell
 .\shared\scripts\dev-dashboard.ps1
 ```
 
 **Option 2: Manual**
+
 ```powershell
 npm run dev
 ```
@@ -69,18 +73,21 @@ Opens at `http://localhost:5173` (or next available port).
 ### Full Stack Development
 
 **Terminal 1: Orchestrator**
+
 ```powershell
 cd orchestrator
 .\orchestrator.exe
 ```
 
 **Terminal 2: Node Agent**
+
 ```powershell
 cd node-agent
 .\node-agent.exe
 ```
 
 **Terminal 3: Dashboard**
+
 ```powershell
 cd dashboard
 npm run dev
@@ -112,7 +119,7 @@ The dashboard connects to the orchestrator's HTTP REST API. Default endpoint:
 
 ```typescript
 // src/lib/orchion.ts
-const API_URL = "http://localhost:8080/api/nodes"
+const API_URL = 'http://localhost:8080/api/nodes';
 ```
 
 To change the endpoint, edit `src/lib/orchion.ts`.
@@ -131,16 +138,16 @@ To change the endpoint, edit `src/lib/orchion.ts`.
 
 ```json
 [
-  {
-    "id": "node-uuid",
-    "hostname": "my-server",
-    "capabilities": {
-      "cpu": "8 cores",
-      "memory": "16.00 GB",
-      "os": "windows/amd64"
-    },
-    "lastSeenUnix": 1234567890
-  }
+	{
+		"id": "node-uuid",
+		"hostname": "my-server",
+		"capabilities": {
+			"cpu": "8 cores",
+			"memory": "16.00 GB",
+			"os": "windows/amd64"
+		},
+		"lastSeenUnix": 1234567890
+	}
 ]
 ```
 
@@ -151,17 +158,20 @@ To change the endpoint, edit `src/lib/orchion.ts`.
 ### Routes (`src/routes/`)
 
 SvelteKit uses file-based routing:
+
 - `+page.svelte` - Main page component
 - `+layout.svelte` - Layout wrapper (shared across pages)
 
 ### Library (`src/lib/`)
 
 Shared utilities and API clients:
+
 - `orchion.ts` - HTTP client for orchestrator REST API
 
 ### Static Assets (`static/`)
 
 Files served directly (not processed):
+
 - `robots.txt` - Search engine directives
 - Favicons and images (when added)
 
@@ -171,11 +181,11 @@ Files served directly (not processed):
 
 ```json
 {
-  "dev": "vite dev",           // Start dev server
-  "build": "vite build",       // Build for production
-  "preview": "vite preview",   // Preview production build
-  "check": "svelte-check",     // Type checking
-  "lint": "eslint ."           // Linting
+	"dev": "vite dev", // Start dev server
+	"build": "vite build", // Build for production
+	"preview": "vite preview", // Preview production build
+	"check": "svelte-check", // Type checking
+	"lint": "eslint ." // Linting
 }
 ```
 
@@ -187,24 +197,24 @@ Files served directly (not processed):
 
 ```svelte
 <script>
-  import { onMount, onDestroy } from "svelte";
-  import { getNodes } from "$lib/orchion";
-  
-  let nodes = [];
-  let interval;
-  
-  async function refreshNodes() {
-    nodes = await getNodes();
-  }
-  
-  onMount(() => {
-    refreshNodes();
-    interval = setInterval(refreshNodes, 5000); // Every 5 seconds
-  });
-  
-  onDestroy(() => {
-    clearInterval(interval);
-  });
+	import { onMount, onDestroy } from 'svelte';
+	import { getNodes } from '$lib/orchion';
+
+	let nodes = [];
+	let interval;
+
+	async function refreshNodes() {
+		nodes = await getNodes();
+	}
+
+	onMount(() => {
+		refreshNodes();
+		interval = setInterval(refreshNodes, 5000); // Every 5 seconds
+	});
+
+	onDestroy(() => {
+		clearInterval(interval);
+	});
 </script>
 ```
 
@@ -212,30 +222,30 @@ Files served directly (not processed):
 
 ```svelte
 <script>
-  let nodes = [];
-  let error = null;
-  let loading = true;
-  
-  onMount(async () => {
-    try {
-      nodes = await getNodes();
-    } catch (e) {
-      error = "Failed to fetch nodes. Is orchestrator running?";
-      console.error(e);
-    } finally {
-      loading = false;
-    }
-  });
+	let nodes = [];
+	let error = null;
+	let loading = true;
+
+	onMount(async () => {
+		try {
+			nodes = await getNodes();
+		} catch (e) {
+			error = 'Failed to fetch nodes. Is orchestrator running?';
+			console.error(e);
+		} finally {
+			loading = false;
+		}
+	});
 </script>
 
 {#if loading}
-  <p>Loading nodes...</p>
+	<p>Loading nodes...</p>
 {:else if error}
-  <p class="error">{error}</p>
+	<p class="error">{error}</p>
 {:else if nodes.length === 0}
-  <p>No nodes registered yet.</p>
+	<p>No nodes registered yet.</p>
 {:else}
-  <!-- Display nodes -->
+	<!-- Display nodes -->
 {/if}
 ```
 
@@ -245,21 +255,21 @@ Calculate status based on `lastSeenUnix`:
 
 ```svelte
 <script>
-  function getNodeStatus(node) {
-    const lastSeen = node.lastSeenUnix * 1000;
-    const now = Date.now();
-    const age = now - lastSeen;
-    
-    if (age < 10000) return "active";    // < 10 seconds
-    if (age < 30000) return "stale";     // < 30 seconds
-    return "offline";                     // > 30 seconds
-  }
+	function getNodeStatus(node) {
+		const lastSeen = node.lastSeenUnix * 1000;
+		const now = Date.now();
+		const age = now - lastSeen;
+
+		if (age < 10000) return 'active'; // < 10 seconds
+		if (age < 30000) return 'stale'; // < 30 seconds
+		return 'offline'; // > 30 seconds
+	}
 </script>
 
 {#each nodes as node}
-  <div class="node-card status-{getNodeStatus(node)}">
-    <!-- ... -->
-  </div>
+	<div class="node-card status-{getNodeStatus(node)}">
+		<!-- ... -->
+	</div>
 {/each}
 ```
 
@@ -268,12 +278,14 @@ Calculate status based on `lastSeenUnix`:
 ## Planned Features
 
 ### Phase 2 - Core Features
+
 - [ ] Node detail view (drill-down into individual nodes)
 - [ ] Real-time updates (WebSocket or polling)
 - [ ] Node status indicators (active/stale/offline)
 - [ ] Capability filtering and sorting
 
 ### Phase 3 - Advanced Features
+
 - [ ] Job queue view
 - [ ] Job execution history
 - [ ] Log viewer with streaming
@@ -281,6 +293,7 @@ Calculate status based on `lastSeenUnix`:
 - [ ] Metrics and charts
 
 ### Phase 4 - Management Features
+
 - [ ] Job submission interface
 - [ ] Agent pipeline authoring
 - [ ] Configuration management
@@ -318,14 +331,16 @@ npm install
 Tailwind CSS is configured but minimally used.
 
 **Add Tailwind classes to components:**
+
 ```svelte
 <div class="container mx-auto p-4">
-  <h1 class="text-2xl font-bold">Orchion Nodes</h1>
-  <!-- ... -->
+	<h1 class="text-2xl font-bold">Orchion Nodes</h1>
+	<!-- ... -->
 </div>
 ```
 
 **Create component styles in `layout.css`:**
+
 ```css
 @tailwind base;
 @tailwind components;
@@ -333,11 +348,12 @@ Tailwind CSS is configured but minimally used.
 
 /* Custom styles */
 .node-card {
-  @apply border rounded p-4 mb-4;
+	@apply mb-4 rounded border p-4;
 }
 ```
 
 **Future plans:**
+
 - Component library integration
 - Responsive design improvements
 - Status indicator styling

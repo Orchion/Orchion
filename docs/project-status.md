@@ -11,18 +11,26 @@
 
 ```
 ┌─────────────┐     gRPC      ┌──────────────┐
-│ Node Agent  │───────────────▶│ Orchestrator │
-│             │◀───────────────│              │
-│ - Register  │   Heartbeats  │ - Registry   │
-│ - Heartbeat │               │ - gRPC API   │
-│ - Capabilities│             │ - HTTP API   │
-└─────────────┘               └──────┬───────┘
-                                    │ HTTP
-                                    ▼
-                             ┌─────────────┐
-                             │  Dashboard  │
-                             │  SvelteKit  │
-                             └─────────────┘
+│ Node Agent  │───────────────▶│ Orchestrator │◀─────┐
+│             │◀───────────────│              │      │
+│ - Register  │ Heartbeats +  │ - Registry   │      │
+│ - Heartbeat │     Logs      │ - gRPC API   │      │
+│ - Capabilities│             │ - HTTP API   │      │
+│ - Job Exec  │               │ - Log Service│      │
+└─────────────┘               └──────┬───────┘      │
+                                    │ HTTP         │
+                                    ▼              │
+                             ┌─────────────┐      │
+                             │  Dashboard  │      │
+                             │  SvelteKit  │      │
+                             │  + Logs UI  │      │
+                             └─────────────┘      │
+                                    ▲             │
+                                    │             │
+                             ┌──────┴─────────────┘
+                             │  VS Code Extension │
+                             │    + Log Viewer    │
+                             └────────────────────┘
 ```
 
 ### Data Flow
@@ -42,6 +50,49 @@
    - HTTP handler calls `ListNodes` gRPC method
    - Returns JSON array of all registered nodes
 
+4. **Log Streaming:**
+   - All components use structured logging (Go: logrus, TypeScript: console)
+   - Node agents stream logs to orchestrator via gRPC LogStreamer service
+   - Orchestrator broadcasts logs to connected clients (dashboard, VS Code)
+   - Dashboard receives logs via Server-Sent Events (`/api/logs`)
+   - VS Code extension polls logs via HTTP API
+
+---
+
+## 🛠️ Development Tools & Quality Assurance
+
+### Code Quality Automation ✅ **FULLY IMPLEMENTED**
+
+**Status:** Complete development environment with automated code quality tools
+
+**Implemented:**
+- ✅ **Go Linting**: `golangci-lint` with 30+ rules including security checks
+- ✅ **Go Formatting**: `gofmt` + `goimports` for consistent code style
+- ✅ **TypeScript Linting**: ESLint with Prettier integration
+- ✅ **TypeScript Formatting**: Prettier with Svelte support
+- ✅ **Automated Scripts**: `format-all.ps1`, `lint-all.ps1` for entire codebase
+- ✅ **Shared Configuration**: Root-level config files (`.prettierrc`, `.golangci.yml`, etc.)
+- ✅ **Setup Integration**: `setup-all.ps1` installs all quality tools automatically
+
+**Configuration Files:**
+- `.golangci.yml` - Comprehensive Go linting rules
+- `.prettierrc` - Consistent formatting across all TypeScript/JavaScript
+- `.prettierignore` - Exclude build artifacts from formatting
+- `.eslintignore` - Exclude generated files from linting
+- `.editorconfig` - Consistent editor settings
+
+**Automated Scripts:**
+```powershell
+# Format entire codebase
+.\shared\scripts\format-all.ps1
+
+# Lint entire codebase
+.\shared\scripts\lint-all.ps1
+
+# Initial setup (installs all tools)
+.\shared\scripts\setup-all.ps1
+```
+
 ---
 
 ## ✅ What's Actually Implemented
@@ -58,7 +109,9 @@
 - ✅ `go.mod` - Dependencies configured
 - ✅ Graceful shutdown handling
 - ✅ Heartbeat monitoring with automatic stale node cleanup
-- ✅ HTTP REST API for dashboard (`/api/nodes`)
+- ✅ HTTP REST API for dashboard (`/api/nodes`, `/api/logs`)
+- ✅ Centralized logging system with gRPC LogStreamer service
+- ✅ Structured logging with JSON output and contextual fields
 
 **Features:**
 - Node registration via gRPC
@@ -66,6 +119,7 @@
 - Automatic removal of stale nodes
 - Proper gRPC status codes (codes.InvalidArgument, codes.NotFound, etc.)
 - CORS support for dashboard
+- Real-time log streaming to dashboard and VS Code extension
 
 ---
 
@@ -75,17 +129,20 @@
 
 **Implemented:**
 - ✅ `cmd/node-agent/main.go` - Complete implementation with registration & heartbeat
-- ✅ `internal/capabilities/capabilities.go` - CPU/memory/OS detection using gopsutil
+- ✅ `internal/capabilities/capabilities.go` - Comprehensive hardware detection (CPU/memory/OS/GPU/power)
 - ✅ `internal/heartbeat/heartbeat.go` - gRPC client with auto-re-registration
 - ✅ `internal/containers/` - Container management (Docker, Ollama, vLLM support)
+- ✅ `shared/logging/` - Structured logging library integration
 - ✅ `go.mod` - Dependencies configured
 - ✅ Auto-re-registration on orchestrator restart
+- ✅ Periodic capability updates (configurable interval)
 - ✅ Proper error handling with gRPC status codes
 
 **Features:**
 - Automatic node registration
-- Periodic heartbeat loop
-- Capability detection (CPU cores, system memory, OS)
+- Periodic heartbeat loop (5s default)
+- Comprehensive capability detection (CPU cores, system memory, OS, GPU type/VRAM, power usage)
+- Periodic capability updates (10s default, configurable)
 - Re-registration when orchestrator restarts
 - Container management infrastructure (ready for job execution)
 
@@ -97,6 +154,7 @@
 
 **Implemented:**
 - ✅ `src/routes/+page.svelte` - Node list display
+- ✅ `src/routes/logs/+page.svelte` - Real-time log viewer
 - ✅ `src/lib/orchion.ts` - HTTP client with error handling and configurable base URL
 - ✅ SvelteKit setup and configuration
 
@@ -105,12 +163,13 @@
 - Shows node capabilities and last seen time
 - Error handling for API failures
 - Configurable orchestrator URL via `VITE_ORCHESTRATOR_URL` env var
+- Real-time log streaming via Server-Sent Events
+- Log filtering and display with proper formatting
 
 **Missing:**
 - ⏳ Auto-refresh/polling
 - ⏳ Node detail view
 - ⏳ Job queue view
-- ⏳ Log viewer
 
 ---
 
@@ -121,12 +180,12 @@
 **Implemented:**
 - ✅ Extension structure and configuration
 - ✅ Tree provider registration (fixed to be inside activate())
-- ✅ Basic tree view placeholder
+- ✅ Logs tree view with real-time updates from orchestrator
+- ✅ Orchestrator client integration for log fetching
 
 **Missing:**
 - ⏳ Actual node fetching from orchestrator
 - ⏳ Job submission panel
-- ⏳ Log streaming
 - ⏳ Pipeline authoring
 
 ---
@@ -135,21 +194,26 @@
 
 ### Job Execution System
 
-**Status:** Infrastructure exists, execution logic missing
+**Status:** Orchestrator-side complete, node-agent executor missing
 
 **What exists:**
-- ✅ Container management (`internal/containers/manager.go`)
+- ✅ Job queue implementation (`internal/queue/queue.go`)
+- ✅ Job processor with scheduling (`internal/orchestrator/processor.go`)
+- ✅ Job submission and status APIs (`SubmitJob`, `GetJobStatus`)
+- ✅ Round-robin scheduler (`internal/scheduler/scheduler.go`)
+- ✅ Container management infrastructure (`internal/containers/`)
 - ✅ Ollama and vLLM container configs
-- ✅ Executor placeholder (`internal/executor/executor.go`)
+- ✅ Job protobuf definitions (`shared/proto/v1/orchestrator.proto`)
+- ✅ OpenAI-compatible HTTP gateway (`internal/gateway/gateway.go`)
+- ✅ LLM service that routes to nodes (`internal/llm/service.go`)
 
 **What's missing:**
-- ❌ Job execution logic in executor.go
-- ❌ Job scheduling in orchestrator
-- ❌ Job routing/dispatching
-- ❌ Log streaming from jobs
-- ❌ Job status tracking
+- ❌ Job execution logic in node-agent `executor.go` (placeholder only)
+- ❌ Log streaming from node-agent to orchestrator
+- ❌ Job status display in dashboard
+- ❌ Job queue view in dashboard
 
-**Priority:** 🟡 **HIGH - Core functionality**
+**Priority:** 🔴 **HIGHEST - Core functionality - Node-agent executor is the final missing piece**
 
 ---
 
@@ -161,12 +225,12 @@
 - ✅ In-memory node registry works great for development
 
 **Missing:**
-- ❌ Database integration (SQLite/PostgreSQL)
-- ❌ Persistent node registry
+- ❌ Database integration (SQLite recommended, not Postgres yet)
+- ❌ Persistent node registry (optional)
 - ❌ Job history storage
-- ❌ Configuration persistence
+- ❌ Log storage (optional)
 
-**Priority:** 🟢 **MEDIUM - Can add after job execution works**
+**Priority:** 🟡 **MEDIUM - Add SQLite after job execution works (Week 4)**
 
 ---
 
@@ -180,7 +244,7 @@
 - ❌ RBAC for dashboard
 - ❌ TLS/mTLS for gRPC
 
-**Priority:** 🟢 **LOW - Can add when needed for production**
+**Priority:** 🟢 **LOW - Moved down in priority - Can add when needed for production**
 
 ---
 
@@ -211,32 +275,38 @@
 
 ---
 
-## 🎯 Recommended Next Steps
+## 🎯 Recommended Next Steps (Updated Priorities)
 
-### Phase 1: Job Execution (Next Priority)
+### Week 1: Complete Job Execution Loop (Highest Priority)
 
-**Goal:** Execute AI inference jobs on nodes
+**Goal:** Turn Orchion from "node registry" into "actual orchestrator"
 
-1. **Implement executor.go** (2-3 hours)
-   - Wire up container manager
-   - Execute container-based jobs (Ollama/vLLM)
-   - Stream logs back to orchestrator
+**Why this matters:**
+The orchestrator-side job execution system is complete. You're 90% of the way to a functional inference cluster. Only the node-agent executor needs implementation.
 
-2. **Add job scheduling** (2-3 hours)
-   - Simple round-robin scheduler
-   - Job queue in orchestrator
-   - Route jobs to available nodes
+1. **Implement node-agent executor.go** (2-3 hours)
+   - Call container manager to run Ollama/vLLM containers
+   - Execute jobs and return results to orchestrator
+   - Integrate with structured logging system
 
-3. **Add job API** (1-2 hours)
-   - gRPC endpoints: SubmitJob, GetJobStatus, ListJobs
-   - HTTP REST endpoints for dashboard
-   - Job status tracking
+2. **Test end-to-end job execution** (1-2 hours)
+   - Submit job via API
+   - Verify job gets assigned to node
+   - Verify container execution works
+   - Check job completion and results
 
-**Total: ~6-8 hours for basic job execution**
+3. **Complete log streaming pipeline** (2-3 hours)
+   - Implement node-agent → orchestrator gRPC streaming
+   - Add persistent log storage
+   - Enhance real-time log delivery
+
+**Total: ~5-8 hours for complete job execution**
+
+**Current Status:** Job queue, scheduling, APIs, and routing are all implemented. Only node-agent execution logic remains.
 
 ---
 
-### Phase 2: Enhanced Dashboard
+### Week 2: Dashboard Enhancements
 
 **Goal:** Better UI for monitoring and managing jobs
 
@@ -252,24 +322,62 @@
    - Show node capabilities in detail
    - Job history per node
 
-**Total: ~4-6 hours**
+4. **Enhance logging features** (2-3 hours)
+   - Add log filtering and search
+   - Improve log persistence
+   - Add log export functionality
+
+**Total: ~6-8 hours**
 
 ---
 
-### Phase 3: TypeScript Types
+### Week 3: VS Code Extension
 
-**Goal:** Better type safety for frontend
+**Goal:** Developer tooling for interacting with Orchion
 
-1. **Generate TS types from protobuf** (1-2 hours)
-   - Set up protobuf TS generation
-   - Generate types to `shared/ts/`
-   - Update dashboard to use generated types
+1. **Fetch nodes from orchestrator** (1-2 hours)
+2. **Submit jobs** (2-3 hours)
+3. **Stream logs** (2-3 hours)
 
-2. **Add Zod schemas** (optional, 1-2 hours)
+**Total: ~5-8 hours**
+
+---
+
+### Week 4: Persistence & Type Safety
+
+**Goal:** Add persistence and improve developer experience
+
+1. **Add SQLite persistence** (3-4 hours)
+   - Job history table
+   - Node registry table (optional)
+   - Log storage (optional)
+
+2. **Add TS type generation** (1-2 hours)
+   - Generate types from protobuf
+   - Shared types for dashboard + VS Code
+
+3. **Add Zod schemas** (optional, 1-2 hours)
    - Runtime validation
    - Better error messages
 
-**Total: ~2-4 hours**
+**Total: ~5-8 hours**
+
+---
+
+## Priority Changes
+
+**Moved UP in priority:**
+- ✅ Job execution framework (Top priority)
+- ✅ Job scheduling (Top priority)
+- ✅ Log streaming (High priority)
+- ✅ Job queue view (High priority)
+
+**Moved DOWN in priority:**
+- ⬇️ Authentication/Authorization
+- ⬇️ Persistent storage (Postgres) - SQLite is sufficient for now
+- ⬇️ Kubernetes manifests
+- ⬇️ GPU-aware scheduling
+- ⬇️ Multi-cluster federation
 
 ---
 
@@ -279,11 +387,14 @@
 - Orchestrator runs gRPC and HTTP servers
 - Node agents can register and send heartbeats
 - Dashboard can display registered nodes
-- Automatic capability detection (CPU, memory, OS)
+- Comprehensive capability detection (CPU, memory, OS, GPU, power usage)
 - Heartbeat timeout monitoring with automatic cleanup
 - Auto-re-registration on orchestrator restart
-- Proper error handling throughout
+- Job queue and scheduling system complete
+- Job submission and status APIs implemented
+- OpenAI-compatible HTTP gateway implemented
 - Container management infrastructure ready
+- Proper error handling throughout
 
 ### ⏳ Next Up
 - Job execution framework
@@ -293,7 +404,11 @@
 
 ### 📅 Timeline
 - **Phase 1 (Foundations):** ✅ Complete
-- **Phase 2 (Core Functionality):** ⏳ ~60% complete (node management done, job execution pending)
+- **Phase 2 (Core Functionality):** ⏳ ~90% complete (node management done, orchestrator job system done, node-agent executor is next)
+- **Week 1:** Complete job execution loop (node-agent executor + testing)
+- **Week 2:** Dashboard enhancements (auto-refresh, job queue, log streaming)
+- **Week 3:** VS Code extension (fetch nodes, submit jobs, logs)
+- **Week 4:** SQLite persistence + TS type generation
 - **Phase 3+:** 🔜 Future work
 
 ---
@@ -331,7 +446,7 @@ Orchion/
 │   │   └── orchestrator/service.go       ✅ gRPC service
 │   ├── api/v1/v1/                        ✅ Generated protobuf files
 │   ├── go.mod                            ✅ Dependencies
-│   └── Makefile                          ✅ Protobuf generation
+│   └── Makefile                          ✅ Protobuf generation (component-specific)
 ├── node-agent/
 │   ├── cmd/node-agent/main.go            ✅ Complete agent
 │   ├── internal/
@@ -340,13 +455,18 @@ Orchion/
 │   │   ├── containers/                   ✅ Docker/Ollama/vLLM
 │   │   └── proto/v1/                     ✅ Generated protobuf files
 │   ├── go.mod                            ✅ Dependencies
-│   └── Makefile                          ✅ Protobuf generation
+│   └── Makefile                          ✅ Protobuf generation (component-specific)
 ├── dashboard/
 │   ├── src/routes/+page.svelte           ✅ Node list UI
 │   └── src/lib/orchion.ts                ✅ HTTP client
 ├── shared/
 │   ├── proto/v1/orchestrator.proto       ✅ Protocol definitions
-│   └── scripts/                          ✅ Build/run scripts
+│   ├── scripts/                          ✅ Build/run/format/lint scripts
+│   └── logging/                          ✅ Structured logging library
+├── .golangci.yml                         ✅ Go linting configuration
+├── .prettierrc                           ✅ Code formatting rules
+├── .prettierignore                       ✅ Format exclusions
+├── .editorconfig                         ✅ Editor settings
 └── docs/                                 ✅ Documentation
 ```
 

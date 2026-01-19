@@ -30,9 +30,7 @@ export class ChatPanel {
 			column || vscode.ViewColumn.One,
 			{
 				enableScripts: true,
-				localResourceRoots: [
-					vscode.Uri.joinPath(extensionUri, 'dist'),
-				],
+				localResourceRoots: [vscode.Uri.joinPath(extensionUri, 'dist')],
 			}
 		);
 
@@ -75,10 +73,7 @@ export class ChatPanel {
 		});
 	}
 
-	private async handleSendMessage(
-		message: ChatMessage,
-		model: string
-	): Promise<void> {
+	private async handleSendMessage(message: ChatMessage, model: string): Promise<void> {
 		if (!this.sessionId) {
 			this.sessionId = SessionManager.createSession(model);
 		}
@@ -124,8 +119,7 @@ export class ChatPanel {
 
 			this._panel.webview.postMessage({ type: 'streamComplete' });
 		} catch (error) {
-			const errorMessage =
-				error instanceof Error ? error.message : String(error);
+			const errorMessage = error instanceof Error ? error.message : String(error);
 			this._panel.webview.postMessage({
 				type: 'error',
 				error: errorMessage,
@@ -147,7 +141,10 @@ export class ChatPanel {
 	/**
 	 * Send a message to the chat panel programmatically
 	 */
-	public sendMessage(message: { role: 'user' | 'assistant' | 'system'; content: string }, model?: string): void {
+	public sendMessage(
+		message: { role: 'user' | 'assistant' | 'system'; content: string },
+		model?: string
+	): void {
 		if (model) {
 			this._panel.webview.postMessage({
 				type: 'setModel',

@@ -16,11 +16,13 @@ import (
 
 // Client handles communication with the orchestrator
 type Client struct {
-	conn     *grpc.ClientConn
-	client   pb.OrchestratorClient
-	address  string
-	nodeID   string
-	nodeInfo *pb.Node // Store node info for re-registration
+	conn        *grpc.ClientConn
+	client      pb.OrchestratorClient
+	address     string
+	nodeID      string
+	nodeInfo    *pb.Node                // Store node info for re-registration
+	updateCaps  bool                    // Whether to update capabilities periodically
+	capsUpdater func() *pb.Capabilities // Function to get updated capabilities
 }
 
 // NewClient creates a new heartbeat client
@@ -55,6 +57,12 @@ func (c *Client) RegisterNode(ctx context.Context, node *pb.Node) error {
 	return nil
 }
 
+// EnableCapabilityUpdates enables periodic capability updates
+func (c *Client) EnableCapabilityUpdates(updater func() *pb.Capabilities) {
+	c.updateCaps = true
+	c.capsUpdater = updater
+}
+
 // SendHeartbeat sends a heartbeat to the orchestrator
 func (c *Client) SendHeartbeat(ctx context.Context) error {
 	if c.nodeID == "" {
@@ -66,6 +74,31 @@ func (c *Client) SendHeartbeat(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to send heartbeat: %w", err)
 	}
+
+	return nil
+}
+
+// UpdateCapabilities sends updated capabilities to the orchestrator
+func (c *Client) UpdateCapabilities(ctx context.Context) error {
+	if c.nodeID == "" {
+		return fmt.Errorf("node not registered, cannot update capabilities")
+	}
+
+	if c.capsUpdater == nil {
+		return fmt.Errorf("capability updater not configured")
+	}
+
+	caps := c.capsUpdater()
+	req := &pb.UpdateNodeRequest{
+		NodeId:       c.nodeID,
+		Capabilities: caps,
+	}
+
+	_, err := c.client.UpdateNode(ctx, req)
+	if err != nil {
+		return fmt.Errorf("failed to update capabilities: %w", err)
+	}
+
 	return nil
 }
 

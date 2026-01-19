@@ -2,43 +2,20 @@
 # Usage: .\shared\scripts\clean-all.ps1
 
 $ErrorActionPreference = "Stop"
-$projectRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+Import-Module "$PSScriptRoot\Orchion.Common.psm1" -Force
 
 Write-Host "Cleaning build artifacts..." -ForegroundColor Cyan
 Write-Host ""
 
-# Clean Orchestrator
-Write-Host "Cleaning Orchestrator..." -ForegroundColor Yellow
-$orchestratorExe = "$projectRoot\orchestrator\orchestrator.exe"
-if (Test-Path $orchestratorExe) {
-    Remove-Item $orchestratorExe -Force
-    Write-Host "  [OK] Removed orchestrator.exe" -ForegroundColor Gray
-}
-
-# Clean Node Agent
-Write-Host "Cleaning Node Agent..." -ForegroundColor Yellow
-$nodeAgentExe = "$projectRoot\node-agent\node-agent.exe"
-if (Test-Path $nodeAgentExe) {
-    Remove-Item $nodeAgentExe -Force
-    Write-Host "  [OK] Removed node-agent.exe" -ForegroundColor Gray
-}
+# Clean Go components
+Clean-GoComponent -Component 'orchestrator' -OutputName 'orchestrator'
+Clean-GoComponent -Component 'node-agent' -OutputName 'node-agent'
 
 # Clean Dashboard
-Write-Host "Cleaning Dashboard..." -ForegroundColor Yellow
-Push-Location "$projectRoot\dashboard"
 try {
-    if (Test-Path "build") {
-        Remove-Item -Recurse -Force "build"
-        Write-Host "  [OK] Removed build directory" -ForegroundColor Gray
-    }
-    if (Test-Path ".svelte-kit") {
-        Remove-Item -Recurse -Force ".svelte-kit"
-        Write-Host "  [OK] Removed .svelte-kit directory" -ForegroundColor Gray
-    }
+    Clean-Dashboard
 } catch {
-    Write-Host "  [WARN] Dashboard clean skipped: $_" -ForegroundColor Yellow
-} finally {
-    Pop-Location
+    Write-Warning "Dashboard clean failed: $_"
 }
 
 Write-Host ""

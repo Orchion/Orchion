@@ -3,12 +3,10 @@ import { OrchestratorClient, Node } from '../api/orchestratorClient';
 import { SettingsManager } from '../state/settings';
 
 export class ClusterTreeProvider implements vscode.TreeDataProvider<ClusterItem> {
-	private _onDidChangeTreeData: vscode.EventEmitter<
-		ClusterItem | undefined | null | void
-	> = new vscode.EventEmitter<ClusterItem | undefined | null | void>();
-	readonly onDidChangeTreeData: vscode.Event<
-		ClusterItem | undefined | null | void
-	> = this._onDidChangeTreeData.event;
+	private _onDidChangeTreeData: vscode.EventEmitter<ClusterItem | undefined | null | void> =
+		new vscode.EventEmitter<ClusterItem | undefined | null | void>();
+	readonly onDidChangeTreeData: vscode.Event<ClusterItem | undefined | null | void> =
+		this._onDidChangeTreeData.event;
 
 	private client: OrchestratorClient;
 	private refreshInterval: NodeJS.Timeout | undefined;
@@ -82,24 +80,16 @@ export class ClusterTreeProvider implements vscode.TreeDataProvider<ClusterItem>
 			const node = element.node;
 			const items: ClusterItem[] = [];
 
+			items.push(new ClusterItem(`ID: ${node.id}`, vscode.TreeItemCollapsibleState.None));
 			items.push(
-				new ClusterItem(`ID: ${node.id}`, vscode.TreeItemCollapsibleState.None)
-			);
-			items.push(
-				new ClusterItem(
-					`Hostname: ${node.hostname}`,
-					vscode.TreeItemCollapsibleState.None
-				)
+				new ClusterItem(`Hostname: ${node.hostname}`, vscode.TreeItemCollapsibleState.None)
 			);
 
 			if (node.capabilities) {
 				const caps = node.capabilities;
 				if (caps.cpu) {
 					items.push(
-						new ClusterItem(
-							`CPU: ${caps.cpu}`,
-							vscode.TreeItemCollapsibleState.None
-						)
+						new ClusterItem(`CPU: ${caps.cpu}`, vscode.TreeItemCollapsibleState.None)
 					);
 				}
 				if (caps.memory) {
@@ -112,10 +102,7 @@ export class ClusterTreeProvider implements vscode.TreeDataProvider<ClusterItem>
 				}
 				if (caps.os) {
 					items.push(
-						new ClusterItem(
-							`OS: ${caps.os}`,
-							vscode.TreeItemCollapsibleState.None
-						)
+						new ClusterItem(`OS: ${caps.os}`, vscode.TreeItemCollapsibleState.None)
 					);
 				}
 			}

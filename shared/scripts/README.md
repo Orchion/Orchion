@@ -2,6 +2,8 @@
 
 Centralized scripts for managing the Orchion monorepo. These scripts simplify common operations like building, running, and testing all components.
 
+The scripts use a shared PowerShell module (`Orchion.Common.psm1`) that provides common functions and reduces code duplication.
+
 ---
 
 ## 📋 Available Scripts
@@ -18,6 +20,7 @@ Sets up the entire development environment - installs all dependencies and prere
 **What it does:**
 - Checks for required tools (Go, Node.js, npm, protoc, Docker)
 - Installs Go protobuf plugins if missing
+- Installs Go linting/formatting tools (golangci-lint, goimports) if missing
 - Installs Go dependencies for orchestrator and node-agent
 - Generates protobuf files for both Go components
 - Installs npm dependencies for dashboard
@@ -135,8 +138,48 @@ Runs tests for all Orchion components.
 
 ---
 
-### `test-api.ps1`
-Tests the Orchion REST API.
+### `lint-all.ps1`
+Runs linting for all Orchion components.
+
+**Usage:**
+```powershell
+.\shared\scripts\lint-all.ps1
+```
+
+**What it does:**
+- Runs golangci-lint for Go projects (orchestrator, node-agent, shared/logging)
+- Runs ESLint for dashboard (Svelte/TypeScript)
+- Runs ESLint for VSCode extension (TypeScript)
+- Reports pass/fail for each component
+
+**Prerequisites:**
+- golangci-lint must be installed (`go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest`)
+- Dashboard dependencies installed (auto-installs if missing)
+- VSCode extension dependencies installed (auto-installs if missing)
+
+**Note:** Dashboard linting failures are warnings only. VSCode extension and Go linting failures cause script to exit with error.
+
+---
+
+### `format-all.ps1`
+Formats code for all Orchion components.
+
+**Usage:**
+```powershell
+.\shared\scripts\format-all.ps1
+```
+
+**What it does:**
+- Runs gofmt and goimports for Go projects (orchestrator, node-agent, shared/logging)
+- Runs Prettier for dashboard (Svelte/TypeScript)
+- Runs Prettier for VSCode extension (TypeScript)
+- Modifies files in-place
+
+**Prerequisites:**
+- Dashboard dependencies installed (auto-installs if missing)
+- VSCode extension dependencies installed (auto-installs if missing)
+
+**Note:** This script modifies files. Make sure to commit/stash changes before running.
 
 ---
 
@@ -161,21 +204,6 @@ Starts the dashboard development server.
 
 ---
 
-**Usage:**
-```powershell
-.\shared\scripts\test-api.ps1
-```
-
-**What it does:**
-- Fetches nodes from `http://localhost:8080/api/nodes`
-- Displays registered nodes in JSON format
-- Shows helpful error messages if orchestrator isn't running
-
-**Prerequisites:**
-- Orchestrator must be running
-
----
-
 ## 🚀 Common Workflows
 
 ### Initial Setup
@@ -189,8 +217,14 @@ Starts the dashboard development server.
 
 **Note:** `setup-all.ps1` handles protobuf generation and dependency installation automatically.
 
+**Integration Tests:** End-to-end tests are available in the `tests/` directory.
+
 ### Daily Development
 ```powershell
+# Format and lint code
+.\shared\scripts\format-all.ps1
+.\shared\scripts\lint-all.ps1
+
 # Build everything (Go + Dashboard)
 .\shared\scripts\build-all.ps1
 
@@ -203,8 +237,9 @@ Starts the dashboard development server.
 # Test everything
 .\shared\scripts\test-all.ps1
 
-# Test the API
-.\shared\scripts\test-api.ps1
+# Test the API (integration tests in tests/ directory)
+.\tests\test-api.ps1
+.\tests\test-job.ps1
 ```
 
 ### After Changing Protobuf Files
@@ -227,34 +262,12 @@ Starts the dashboard development server.
 
 ---
 
-## 🔧 Alternative: Using Make (Cross-Platform)
-
-If you prefer using `make` (works on Windows with `choco install make`):
-
-```bash
-# Generate protobuf
-make proto
-
-# Build all
-make build
-
-# Clean
-make clean
-
-# See all commands
-make help
-```
-
-See the root `Makefile` for available commands.
-
----
-
 ## 📝 Script Requirements
 
 - **PowerShell 5.1+** (Windows 10+ default)
 - **Go 1.21+** (for building)
 - **protoc** (for `proto-gen.ps1`)
-- **make** (optional, for `proto-gen.ps1`)
+- **make** (optional, used by `proto-gen.ps1` for component-specific protobuf generation)
 
 ---
 
@@ -289,11 +302,40 @@ cd shared\scripts
 
 ---
 
+## 🔧 Shared Module (`Orchion.Common.psm1`)
+
+The scripts use a shared PowerShell module that provides common functionality:
+
+### Utility Functions
+- `Write-Step`, `Write-Success`, `Write-Error`, `Write-Warning`, `Write-Info` - Consistent logging
+- `Invoke-InDirectory` - Run commands in specific directories safely
+- `Get-ProjectRoot` - Get the project root path
+
+### Tool Checking
+- `Test-GoInstalled`, `Test-NodeInstalled`, `Test-NpmInstalled` - Check required tools
+- `Test-ProtocInstalled`, `Test-GolangciLintInstalled` - Check optional tools
+
+### Component Management
+- `Install-GoDependencies`, `Install-NodeDependencies` - Install dependencies
+- `Build-GoComponent`, `Build-Dashboard` - Build components
+- `Test-GoComponent`, `Test-NodeComponent` - Run tests
+- `Lint-GoComponent`, `Lint-NodeComponent` - Run linters
+- `Format-GoComponent`, `Format-NodeComponent` - Format code
+- `Clean-GoComponent`, `Clean-Dashboard` - Clean build artifacts
+- `Generate-Protobuf` - Generate protobuf files
+
+### Configuration
+- `$script:ProjectRoot` - Project root path
+- `$script:Components` - Lists of Go and Node components
+
+---
+
 ## 💡 Tips
 
 - Keep scripts in sync with project structure - if you add new components, update these scripts
 - All scripts use `$ErrorActionPreference = "Stop"` to fail fast on errors
 - Scripts assume they're run from the project root directory
+- The shared module makes it easy to add new components or modify behavior across all scripts
 - Consider adding these scripts to your PATH or creating aliases
 
 ---
@@ -302,6 +344,6 @@ cd shared\scripts
 
 Potential scripts to add:
 - `setup-dev.ps1` - Complete development environment setup
-- `test-all.ps1` - Run all tests across components
 - `deploy-local.ps1` - Deploy to local Docker/Kubernetes
 - `watch-build.ps1` - Watch for changes and rebuild automatically
+- `check-all.ps1` - Run lint + format check without modifying files

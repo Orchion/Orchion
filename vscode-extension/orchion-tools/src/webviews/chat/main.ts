@@ -28,16 +28,10 @@ class ChatWebview {
 	private messages: ChatMessage[] = [];
 
 	constructor() {
-		this.messagesContainer = document.getElementById(
-			'messages'
-		) as HTMLElement;
-		this.messageInput = document.getElementById(
-			'message-input'
-		) as HTMLTextAreaElement;
+		this.messagesContainer = document.getElementById('messages') as HTMLElement;
+		this.messageInput = document.getElementById('message-input') as HTMLTextAreaElement;
 		this.sendButton = document.getElementById('send-button') as HTMLButtonElement;
-		this.modelSelector = document.getElementById(
-			'model-selector'
-		) as HTMLSelectElement;
+		this.modelSelector = document.getElementById('model-selector') as HTMLSelectElement;
 		this.clearButton = document.getElementById('clear-chat') as HTMLButtonElement;
 
 		this.setupEventListeners();
@@ -151,10 +145,7 @@ class ChatWebview {
 		this.scrollToBottom();
 	}
 
-	private addMessage(
-		message: ChatMessage,
-		isStreaming: boolean = false
-	): HTMLElement {
+	private addMessage(message: ChatMessage, isStreaming: boolean = false): HTMLElement {
 		this.messages.push(message);
 		const messageDiv = document.createElement('div');
 		messageDiv.className = `message ${message.role}${isStreaming ? ' streaming' : ''}`;
@@ -190,9 +181,7 @@ class ChatWebview {
 	}
 
 	private completeStreaming(): void {
-		const streamingMessages = this.messagesContainer.querySelectorAll(
-			'.message.streaming'
-		);
+		const streamingMessages = this.messagesContainer.querySelectorAll('.message.streaming');
 		streamingMessages.forEach((msg) => {
 			msg.classList.remove('streaming');
 		});

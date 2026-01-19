@@ -1,6 +1,9 @@
 import typescriptEslint from "typescript-eslint";
+import prettier from "eslint-config-prettier";
 
 export default [{
+    ignores: ["dist/**", "out/**", "**/*.d.ts"]
+}, {
     files: ["**/*.ts"],
 }, {
     plugins: {
@@ -24,4 +27,6 @@ export default [{
         "no-throw-literal": "warn",
         semi: "warn",
     },
-}];
+},
+prettier
+];
