@@ -21,12 +21,14 @@ export function activate(context: vscode.ExtensionContext) {
 	});
 
 	context.subscriptions.push(disposable);
+
+	// Register tree data provider inside activate function
+	const nodesProvider = new NodesProvider();
+	const treeDataProvider = vscode.window.createTreeView("orchionNodes", {
+		treeDataProvider: nodesProvider
+	});
+	context.subscriptions.push(treeDataProvider);
 }
 
 // This method is called when your extension is deactivated
 export function deactivate() {}
-
-vscode.window.registerTreeDataProvider(
-  "orchionNodes",
-  new NodesProvider()
-);

@@ -1,71 +1,198 @@
-# orchion-tools README
+# Orchion Tools - VS Code Extension
 
-This is the README for your extension "orchion-tools". After writing up a brief description, we recommend including the following sections.
-
-## Features
-
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
-
-For example if there is an image subfolder under your extension project workspace:
-
-\!\[feature X\]\(images/feature-x.png\)
-
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
-
-## Requirements
-
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
-
-## Extension Settings
-
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
-
-For example:
-
-This extension contributes the following settings:
-
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
-
-## Known Issues
-
-Calling out known issues can help limit users opening duplicate issues against your extension.
-
-## Release Notes
-
-Users appreciate release notes as you update your extension.
-
-### 1.0.0
-
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
+VS Code extension for interacting with Orchion directly from your editor.
 
 ---
 
-## Following extension guidelines
+## Overview
 
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
+Orchion Tools provides developer-focused integration with the Orchion orchestrator. Currently in early development with a basic skeleton in place.
 
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
+**Current Status:** ⏳ Extension structure exists. Core functionality planned.
 
-## Working with Markdown
+**Planned Features:**
+- Orchion Nodes tree view
+- Job submission panel
+- Log streaming
+- Agent pipeline authoring
+- Schema validation
 
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
+---
 
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
+## Architecture
 
-## For more information
+```
+orchion-tools/
+├── src/
+│   ├── extension.ts          # Extension entry point
+│   ├── nodesView.ts          # Tree view provider (placeholder)
+│   └── test/
+│       └── extension.test.ts # Tests
+├── package.json              # Extension manifest
+├── tsconfig.json             # TypeScript configuration
+└── esbuild.js                # Build configuration
+```
 
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
+---
 
-**Enjoy!**
+## Development
+
+### Prerequisites
+
+- Node.js 18+ and npm
+- VS Code (for testing)
+- `vsce` (VS Code Extension Manager) - for packaging
+
+### Install Dependencies
+
+```powershell
+npm install
+```
+
+### Build
+
+```powershell
+npm run compile
+```
+
+### Package Extension
+
+```powershell
+npm install -g @vscode/vsce
+vsce package
+```
+
+Creates a `.vsix` file for distribution.
+
+### Run Extension in Development
+
+1. Open this folder in VS Code
+2. Press F5 to launch Extension Development Host
+3. Extension loads in new VS Code window
+
+---
+
+## Current Implementation
+
+### Extension Activation
+
+`src/extension.ts` - Registers the extension and initializes tree view.
+
+### Tree View
+
+`src/nodesView.ts` - Placeholder implementation. Currently shows hardcoded nodes:
+```typescript
+["node-1", "node-2"] // TODO: fetch from orchestrator
+```
+
+---
+
+## Planned Features
+
+### Phase 3 - Core Functionality
+
+- **Node Tree View**
+  - List all registered nodes from orchestrator
+  - Show node status (active/stale)
+  - Display node capabilities
+  - Refresh button
+
+- **Job Submission**
+  - Form/panel for submitting jobs
+  - Job template support
+  - Schema validation
+
+- **Log Streaming**
+  - Stream logs from nodes
+  - Filter by node/job
+  - Color coding and formatting
+
+- **Pipeline Authoring**
+  - Visual pipeline editor
+  - YAML/JSON support
+  - Validation
+
+### Configuration
+
+Planned settings:
+- Orchestrator API endpoint
+- Auto-refresh interval
+- Theme preferences
+
+---
+
+## Extension Manifest
+
+Key settings in `package.json`:
+
+```json
+{
+  "name": "orchion-tools",
+  "displayName": "Orchion Tools",
+  "contributes": {
+    "views": {
+      "explorer": [{
+        "id": "orchionNodes",
+        "name": "Orchion Nodes"
+      }]
+    }
+  }
+}
+```
+
+---
+
+## Testing
+
+### Running Tests
+
+```powershell
+npm test
+```
+
+### Manual Testing
+
+1. Build extension: `npm run compile`
+2. Press F5 to launch Extension Development Host
+3. Test tree view and other features
+
+---
+
+## Troubleshooting
+
+### Extension not loading
+
+- Check VS Code Developer Console (Help → Toggle Developer Tools)
+- Verify `package.json` is valid
+- Check build output for errors
+
+### Tree view not showing
+
+- Verify view is registered in `package.json` under `contributes.views`
+- Check activation events are configured correctly
+
+---
+
+## Building Against Orchestrator
+
+**Future:** Extension will communicate with orchestrator via:
+- HTTP REST API (for dashboard-like features)
+- WebSocket (for real-time updates)
+- Generated TypeScript types from protobuf
+
+Currently extension is standalone - no orchestrator integration yet.
+
+---
+
+## Related Documentation
+
+- **Project README:** `../../README.md`
+- **Architecture:** `../../docs/architecture.md`
+- **VS Code Extension API:** https://code.visualstudio.com/api
+- **Extension Guidelines:** https://code.visualstudio.com/api/references/extension-guidelines
+
+---
+
+## Contributing
+
+This extension is part of the Orchion monorepo. See project root for contribution guidelines.
