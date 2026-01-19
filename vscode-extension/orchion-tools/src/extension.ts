@@ -1,34 +1,85 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
-import { NodesProvider } from './nodesView';
+import { ChatPanel } from './webviews/chat/panel';
+import { ClusterTreeProvider } from './views/clusterTree';
+import { AgentsTreeProvider } from './views/agentsTree';
+import { LogsTreeProvider } from './views/logsTree';
+import { openChat } from './commands/openChat';
+import { refreshNodes, setClusterProvider } from './commands/refreshNodes';
+import { promptAgent } from './commands/promptAgent';
 
-// This method is called when your extension is activated
-// Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
+	console.log('Orchion Tools extension is now active!');
 
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-	console.log('Congratulations, your extension "orchion-tools" is now active!');
-
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with registerCommand
-	// The commandId parameter must match the command field in package.json
-	const disposable = vscode.commands.registerCommand('orchion-tools.helloWorld', () => {
-		// The code you place here will be executed every time your command is executed
-		// Display a message box to the user
-		vscode.window.showInformationMessage('Hello World from Orchion Tools!');
+	// Register tree views
+	const clusterProvider = new ClusterTreeProvider();
+	const clusterView = vscode.window.createTreeView('orchionCluster', {
+		treeDataProvider: clusterProvider,
+		showCollapseAll: true,
 	});
+	context.subscriptions.push(clusterView);
+	setClusterProvider(clusterProvider);
 
-	context.subscriptions.push(disposable);
-
-	// Register tree data provider inside activate function
-	const nodesProvider = new NodesProvider();
-	const treeDataProvider = vscode.window.createTreeView("orchionNodes", {
-		treeDataProvider: nodesProvider
+	const agentsProvider = new AgentsTreeProvider();
+	const agentsView = vscode.window.createTreeView('orchionAgents', {
+		treeDataProvider: agentsProvider,
+		showCollapseAll: true,
 	});
-	context.subscriptions.push(treeDataProvider);
+	context.subscriptions.push(agentsView);
+
+	const logsProvider = new LogsTreeProvider();
+	const logsView = vscode.window.createTreeView('orchionLogs', {
+		treeDataProvider: logsProvider,
+		showCollapseAll: true,
+	});
+	context.subscriptions.push(logsView);
+
+	// Register commands
+	const openChatCommand = vscode.commands.registerCommand(
+		'orchion.openChat',
+		() => openChat(context)
+	);
+	context.subscriptions.push(openChatCommand);
+
+	const promptAgentCommand = vscode.commands.registerCommand(
+		'orchion.promptAgent',
+		() => promptAgent(context)
+	);
+	context.subscriptions.push(promptAgentCommand);
+
+	const refreshNodesCommand = vscode.commands.registerCommand(
+		'orchion.refreshNodes',
+		() => refreshNodes()
+	);
+	context.subscriptions.push(refreshNodesCommand);
+
+	const refreshAgentsCommand = vscode.commands.registerCommand(
+		'orchion.refreshAgents',
+		() => {
+			agentsProvider.refresh();
+			vscode.window.showInformationMessage('Orchion: Refreshed agents');
+		}
+	);
+	context.subscriptions.push(refreshAgentsCommand);
+
+	const clearLogsCommand = vscode.commands.registerCommand(
+		'orchion.clearLogs',
+		() => {
+			logsProvider.clearLogs();
+			vscode.window.showInformationMessage('Orchion: Cleared logs');
+		}
+	);
+	context.subscriptions.push(clearLogsCommand);
+
+	// Add initial log entry
+	logsProvider.addLog({
+		id: 'init',
+		timestamp: Date.now(),
+		level: 'info',
+		message: 'Orchion Tools extension activated',
+		source: 'extension',
+	});
 }
 
-// This method is called when your extension is deactivated
-export function deactivate() {}
+export function deactivate() {
+	// Cleanup if needed
+}
