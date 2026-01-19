@@ -1,7 +1,7 @@
 package scheduler
 
 import (
-	pb "github.com/Orchion/Orchion/orchestrator/api/v1/v1"
+	pb "github.com/Orchion/Orchion/orchestrator/api/v1"
 	"github.com/Orchion/Orchion/orchestrator/internal/node"
 )
 

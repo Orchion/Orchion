@@ -4,12 +4,13 @@ import (
 	"sync"
 	"time"
 
-	pb "github.com/Orchion/Orchion/orchestrator/api/v1/v1"
+	pb "github.com/Orchion/Orchion/orchestrator/api/v1"
 )
 
 // Registry manages registered nodes and their state
 type Registry interface {
 	Register(node *pb.Node) error
+	UpdateCapabilities(nodeID string, capabilities *pb.Capabilities) error
 	UpdateHeartbeat(nodeID string) error
 	List() []*pb.Node
 	Get(nodeID string) (*pb.Node, bool)
@@ -43,6 +44,20 @@ func (r *InMemoryRegistry) Register(node *pb.Node) error {
 	return nil
 }
 
+// UpdateCapabilities updates the capabilities for a node
+func (r *InMemoryRegistry) UpdateCapabilities(nodeID string, capabilities *pb.Capabilities) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	if node, exists := r.nodes[nodeID]; exists {
+		node.Capabilities = capabilities
+		node.LastSeenUnix = time.Now().Unix()
+		return nil
+	}
+
+	return ErrNodeNotFound
+}
+
 // UpdateHeartbeat updates the last seen timestamp for a node
 func (r *InMemoryRegistry) UpdateHeartbeat(nodeID string) error {
 	r.mu.Lock()
@@ -65,11 +80,11 @@ func (r *InMemoryRegistry) List() []*pb.Node {
 	for _, node := range r.nodes {
 		// Return a copy to avoid race conditions
 		nodes = append(nodes, &pb.Node{
-			Id:            node.Id,
-			Hostname:      node.Hostname,
-			Capabilities:  node.Capabilities,
-			LastSeenUnix:  node.LastSeenUnix,
-			AgentAddress:  node.AgentAddress,
+			Id:           node.Id,
+			Hostname:     node.Hostname,
+			Capabilities: node.Capabilities,
+			LastSeenUnix: node.LastSeenUnix,
+			AgentAddress: node.AgentAddress,
 		})
 	}
 	return nodes

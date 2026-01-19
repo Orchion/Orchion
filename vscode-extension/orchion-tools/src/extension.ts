@@ -34,50 +34,38 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(logsView);
 
 	// Register commands
-	const openChatCommand = vscode.commands.registerCommand(
-		'orchion.openChat',
-		() => openChat(context)
+	const openChatCommand = vscode.commands.registerCommand('orchion.openChat', () =>
+		openChat(context)
 	);
 	context.subscriptions.push(openChatCommand);
 
-	const promptAgentCommand = vscode.commands.registerCommand(
-		'orchion.promptAgent',
-		() => promptAgent(context)
+	const promptAgentCommand = vscode.commands.registerCommand('orchion.promptAgent', () =>
+		promptAgent(context)
 	);
 	context.subscriptions.push(promptAgentCommand);
 
-	const refreshNodesCommand = vscode.commands.registerCommand(
-		'orchion.refreshNodes',
-		() => refreshNodes()
+	const refreshNodesCommand = vscode.commands.registerCommand('orchion.refreshNodes', () =>
+		refreshNodes()
 	);
 	context.subscriptions.push(refreshNodesCommand);
 
-	const refreshAgentsCommand = vscode.commands.registerCommand(
-		'orchion.refreshAgents',
-		() => {
-			agentsProvider.refresh();
-			vscode.window.showInformationMessage('Orchion: Refreshed agents');
-		}
-	);
+	const refreshAgentsCommand = vscode.commands.registerCommand('orchion.refreshAgents', () => {
+		agentsProvider.refresh();
+		vscode.window.showInformationMessage('Orchion: Refreshed agents');
+	});
 	context.subscriptions.push(refreshAgentsCommand);
 
-	const clearLogsCommand = vscode.commands.registerCommand(
-		'orchion.clearLogs',
-		() => {
-			logsProvider.clearLogs();
-			vscode.window.showInformationMessage('Orchion: Cleared logs');
-		}
-	);
+	const clearLogsCommand = vscode.commands.registerCommand('orchion.clearLogs', () => {
+		logsProvider.clearLogs();
+		vscode.window.showInformationMessage('Orchion: Cleared logs');
+	});
 	context.subscriptions.push(clearLogsCommand);
 
-	// Add initial log entry
-	logsProvider.addLog({
-		id: 'init',
-		timestamp: Date.now(),
-		level: 'info',
-		message: 'Orchion Tools extension activated',
-		source: 'extension',
+	const refreshLogsCommand = vscode.commands.registerCommand('orchion.refreshLogs', () => {
+		logsProvider.refresh();
+		vscode.window.showInformationMessage('Orchion: Refreshed logs');
 	});
+	context.subscriptions.push(refreshLogsCommand);
 }
 
 export function deactivate() {

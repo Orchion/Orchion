@@ -19,29 +19,21 @@ export class SettingsManager {
 		const config = vscode.workspace.getConfiguration(this.SECTION);
 		return {
 			orchestratorUrl:
-				config.get<string>('orchestratorUrl') ||
-				DEFAULT_SETTINGS.orchestratorUrl,
-			defaultModel:
-				config.get<string>('defaultModel') ||
-				DEFAULT_SETTINGS.defaultModel,
+				config.get<string>('orchestratorUrl') || DEFAULT_SETTINGS.orchestratorUrl,
+			defaultModel: config.get<string>('defaultModel') || DEFAULT_SETTINGS.defaultModel,
 			refreshInterval:
-				config.get<number>('refreshInterval') ||
-				DEFAULT_SETTINGS.refreshInterval,
+				config.get<number>('refreshInterval') || DEFAULT_SETTINGS.refreshInterval,
 		};
 	}
 
-	static async updateSettings(
-		updates: Partial<OrchionSettings>
-	): Promise<void> {
+	static async updateSettings(updates: Partial<OrchionSettings>): Promise<void> {
 		const config = vscode.workspace.getConfiguration(this.SECTION);
 		for (const [key, value] of Object.entries(updates)) {
 			await config.update(key, value, vscode.ConfigurationTarget.Global);
 		}
 	}
 
-	static onDidChangeSettings(
-		callback: (settings: OrchionSettings) => void
-	): vscode.Disposable {
+	static onDidChangeSettings(callback: (settings: OrchionSettings) => void): vscode.Disposable {
 		return vscode.workspace.onDidChangeConfiguration((e) => {
 			if (e.affectsConfiguration(this.SECTION)) {
 				callback(this.getSettings());

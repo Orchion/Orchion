@@ -14,7 +14,7 @@
 
 ### ✅ Node Agent
 - Automatic registration with orchestrator
-- Accurate capability detection (CPU cores, system memory via gopsutil, OS)
+- Comprehensive capability detection (CPU cores, system memory, OS, GPU type/VRAM, power usage)
 - Periodic heartbeat sending
 - Auto re-registration if orchestrator restarts
 - Graceful shutdown
@@ -25,11 +25,35 @@
 - Displays node information (hostname, capabilities, last seen)
 - TypeScript type safety
 
+### ✅ Code Quality Tools
+
+Orchion includes automated code formatting and linting tools to ensure consistent code quality:
+
+- **Go**: `golangci-lint` (comprehensive linting) + `gofmt`/`goimports` (formatting)
+- **TypeScript/JavaScript**: ESLint + Prettier
+
+**Quick commands:**
+```powershell
+# Format all code
+.\shared\scripts\format-all.ps1
+
+# Lint all code
+.\shared\scripts\lint-all.ps1
+```
+
+These tools use shared configuration files (`.golangci.yml`, `.prettierrc`, etc.) and are installed automatically by the setup script.
+
 ---
 
 ## How to Test
 
 ### Option A: Use Scripts (Easiest)
+
+**Format and lint code (recommended):**
+```powershell
+.\shared\scripts\format-all.ps1
+.\shared\scripts\lint-all.ps1
+```
 
 **Build everything:**
 ```powershell

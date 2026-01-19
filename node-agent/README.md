@@ -8,8 +8,9 @@ A lightweight daemon that runs on each machine in the Orchion cluster. Registers
 
 The node agent is responsible for:
 - Registering with the orchestrator on startup
-- Detecting and reporting hardware capabilities (CPU, memory, OS)
+- Detecting and reporting comprehensive hardware capabilities (CPU, memory, OS, GPU, power usage)
 - Sending periodic heartbeats to indicate the node is alive
+- Updating capabilities periodically (configurable interval)
 - (Future) Executing jobs assigned by the orchestrator
 
 **Current Status:** ✅ Registration and heartbeat working. Job execution not yet implemented.
@@ -26,7 +27,7 @@ node-agent/
 │   └── main.go                 # Agent lifecycle management
 ├── internal/
 │   ├── capabilities/           # Hardware capability detection
-│   │   └── capabilities.go     # CPU, memory, OS detection
+│   │   └── capabilities.go     # CPU, memory, OS, GPU, power usage detection
 │   ├── heartbeat/              # Orchestrator communication
 │   │   └── heartbeat.go        # gRPC client for orchestrator
 │   ├── containers/             # Container management
@@ -86,10 +87,12 @@ make proto
 ### Command-Line Options
 
 ```
--orchestrator      Orchestrator gRPC address (default: localhost:50051)
--heartbeat-interval Heartbeat interval (default: 5s)
--node-id          Custom node ID (auto-generated if not provided)
--hostname         Custom hostname (uses system hostname if not provided)
+-orchestrator         Orchestrator gRPC address (default: localhost:50051)
+-heartbeat-interval   Heartbeat interval (default: 5s)
+-capability-interval  Capability update interval (default: 10s)
+-node-id             Custom node ID (auto-generated if not provided)
+-hostname            Custom hostname (uses system hostname if not provided)
+-agent-port          Node agent gRPC server port (default: 50052)
 ```
 
 ### Examples

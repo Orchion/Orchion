@@ -40,6 +40,15 @@ export interface ChatCompletionResponse {
 	object: string;
 }
 
+export interface LogEntry {
+	id: string;
+	timestamp: number;
+	level: 'debug' | 'info' | 'warn' | 'error';
+	source: string;
+	message: string;
+	fields?: Record<string, string>;
+}
+
 export class OrchestratorClient {
 	private baseUrl: string;
 
@@ -63,7 +72,9 @@ export class OrchestratorClient {
 	 * Note: This requires the orchestrator to expose an agents endpoint.
 	 * Currently returns placeholder data until the endpoint is available.
 	 */
-	async listAgents(): Promise<Array<{ id: string; name: string; model: string; description?: string }>> {
+	async listAgents(): Promise<
+		Array<{ id: string; name: string; model: string; description?: string }>
+	> {
 		// TODO: Replace with actual API call when orchestrator exposes /api/agents
 		// For now, return placeholder based on common models
 		try {
@@ -74,8 +85,18 @@ export class OrchestratorClient {
 			// Placeholder: return default agents
 			// In production, this should call GET /api/agents
 			return [
-				{ id: 'llama3.2', name: 'Llama 3.2', model: 'llama3.2', description: 'Llama 3.2 model' },
-				{ id: 'llama3.1', name: 'Llama 3.1', model: 'llama3.1', description: 'Llama 3.1 model' },
+				{
+					id: 'llama3.2',
+					name: 'Llama 3.2',
+					model: 'llama3.2',
+					description: 'Llama 3.2 model',
+				},
+				{
+					id: 'llama3.1',
+					name: 'Llama 3.1',
+					model: 'llama3.1',
+					description: 'Llama 3.1 model',
+				},
 			];
 		} catch {
 			return [];
@@ -86,7 +107,10 @@ export class OrchestratorClient {
 	 * Send a prompt to a specific agent/model
 	 * Convenience wrapper around chatCompletion
 	 */
-	async sendPrompt(agent: string, message: string): Promise<AsyncIterable<ChatCompletionResponse>> {
+	async sendPrompt(
+		agent: string,
+		message: string
+	): Promise<AsyncIterable<ChatCompletionResponse>> {
 		return this.chatCompletion({
 			model: agent,
 			messages: [{ role: 'user', content: message }],
@@ -97,13 +121,11 @@ export class OrchestratorClient {
 	/**
 	 * Send a chat completion request (streaming)
 	 * Returns an async iterator of response chunks
-	 * 
+	 *
 	 * Note: This requires the orchestrator to expose HTTP endpoints for chat completions.
 	 * Currently, the orchestrator only exposes gRPC for chat. HTTP endpoints need to be added.
 	 */
-	async *chatCompletion(
-		request: ChatCompletionRequest
-	): AsyncIterable<ChatCompletionResponse> {
+	async *chatCompletion(request: ChatCompletionRequest): AsyncIterable<ChatCompletionResponse> {
 		const response = await fetch(`${this.baseUrl}/api/chat/completions`, {
 			method: 'POST',
 			headers: {
@@ -117,9 +139,7 @@ export class OrchestratorClient {
 
 		if (!response.ok) {
 			const errorText = await response.text();
-			throw new Error(
-				`Chat completion failed: ${response.statusText} - ${errorText}`
-			);
+			throw new Error(`Chat completion failed: ${response.statusText} - ${errorText}`);
 		}
 
 		if (!response.body) {
@@ -177,12 +197,55 @@ export class OrchestratorClient {
 
 		if (!response.ok) {
 			const errorText = await response.text();
-			throw new Error(
-				`Chat completion failed: ${response.statusText} - ${errorText}`
-			);
+			throw new Error(`Chat completion failed: ${response.statusText} - ${errorText}`);
 		}
 
 		return await response.json();
+	}
+
+	/**
+	 * Get logs from the orchestrator
+	 * Note: This requires the orchestrator to expose a logs endpoint.
+	 * Currently returns placeholder data until the endpoint is available.
+	 */
+	async getLogs(): Promise<LogEntry[]> {
+		// TODO: Replace with actual API call when orchestrator exposes /api/logs
+		// For now, return placeholder logs
+		try {
+			const nodes = await this.listNodes();
+			const placeholderLogs: LogEntry[] = [];
+
+			// Generate some placeholder logs based on nodes
+			for (const node of nodes) {
+				placeholderLogs.push({
+					id: `log-${Date.now()}-${Math.random()}`,
+					timestamp: Date.now() - Math.random() * 3600000, // Random time in last hour
+					level: 'info',
+					source: `node-agent:${node.id}`,
+					message: `Node ${node.hostname || node.id} registered successfully`,
+					fields: {
+						node_id: node.id,
+						hostname: node.hostname,
+					},
+				});
+			}
+
+			// Add some orchestrator logs
+			placeholderLogs.push({
+				id: `log-${Date.now()}-${Math.random()}`,
+				timestamp: Date.now() - 300000, // 5 minutes ago
+				level: 'info',
+				source: 'orchestrator',
+				message: 'Orchestrator started successfully',
+				fields: {
+					version: '0.1.0',
+				},
+			});
+
+			return placeholderLogs.sort((a, b) => b.timestamp - a.timestamp);
+		} catch {
+			return [];
+		}
 	}
 
 	/**

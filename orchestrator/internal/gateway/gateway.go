@@ -11,7 +11,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
-	pb "github.com/Orchion/Orchion/orchestrator/api/v1/v1"
+	pb "github.com/Orchion/Orchion/orchestrator/api/v1"
 )
 
 // Gateway handles HTTP requests and converts them to gRPC
@@ -358,8 +358,8 @@ func (g *Gateway) convertEmbeddingResponse(resp *pb.EmbeddingResponse) map[strin
 
 	return map[string]interface{}{
 		"object": resp.Object,
-		"data":    data,
-		"model":   resp.Model,
+		"data":   data,
+		"model":  resp.Model,
 		"usage": map[string]interface{}{
 			"prompt_tokens": resp.UsagePromptTokens,
 			"total_tokens":  resp.UsagePromptTokens,

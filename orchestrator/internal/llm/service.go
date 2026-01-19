@@ -10,7 +10,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 
-	pb "github.com/Orchion/Orchion/orchestrator/api/v1/v1"
+	pb "github.com/Orchion/Orchion/orchestrator/api/v1"
 	"github.com/Orchion/Orchion/orchestrator/internal/node"
 	"github.com/Orchion/Orchion/orchestrator/internal/scheduler"
 )

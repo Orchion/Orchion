@@ -68,6 +68,7 @@ Orchion/
 - Make (optional, for protobuf generation)
 - Node.js 18+ (for dashboard)
 - PowerShell (for build/run scripts)
+- **Container Runtime**: [Podman](https://podman.io/) (preferred) or Docker
 
 See `docs/development-setup.md` for detailed setup instructions.
 

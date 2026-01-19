@@ -7,28 +7,28 @@ import (
 
 // VLLMConfig holds configuration for vLLM container
 type VLLMConfig struct {
-	Model       string
-	Port        int
-	GPUs        []string
+	Model              string
+	Port               int
+	GPUs               []string
 	TensorParallelSize int
-	MaxModelLen int
+	MaxModelLen        int
 }
 
 // DefaultVLLMConfig returns default vLLM configuration
 func DefaultVLLMConfig() *VLLMConfig {
 	return &VLLMConfig{
-		Model:       "mistralai/Mistral-7B-Instruct-v0.1",
-		Port:        8000,
-		GPUs:        []string{"all"},
+		Model:              "mistralai/Mistral-7B-Instruct-v0.1",
+		Port:               8000,
+		GPUs:               []string{"all"},
 		TensorParallelSize: 1,
-		MaxModelLen: 4096,
+		MaxModelLen:        4096,
 	}
 }
 
 // CreateVLLMContainerConfig creates a ContainerConfig for vLLM
 func CreateVLLMContainerConfig(cfg *VLLMConfig) *ContainerConfig {
 	name := fmt.Sprintf("orchion-vllm-%s", sanitizeModelName(cfg.Model))
-	
+
 	// Build vLLM command arguments
 	args := []string{
 		"--model", cfg.Model,
@@ -45,12 +45,12 @@ func CreateVLLMContainerConfig(cfg *VLLMConfig) *ContainerConfig {
 	}
 
 	return &ContainerConfig{
-		Name:        name,
-		Image:       "vllm/vllm-openai:latest",
-		Port:        cfg.Port,
-		Model:       cfg.Model,
-		GPUs:        cfg.GPUs,
-		Args:        args,
+		Name:  name,
+		Image: "vllm/vllm-openai:latest",
+		Port:  cfg.Port,
+		Model: cfg.Model,
+		GPUs:  cfg.GPUs,
+		Args:  args,
 		Environment: []string{
 			"VLLM_USE_MODELSCOPE=false",
 		},

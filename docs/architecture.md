@@ -10,24 +10,27 @@ Orchion is a local‑first AI orchestration platform designed for homelab cluste
 
 The orchestrator is the control plane of Orchion. It is responsible for:
 - ✅ Node registration and heartbeat tracking
-- ✅ Capability discovery (CPU, memory, OS)
+- ✅ Capability discovery (CPU, memory, OS, GPU, power usage)
 - ✅ Automatic stale node cleanup
 - ✅ Proper gRPC error handling with status codes
-- ⏳ Job scheduling and routing (interfaces defined, not implemented)
+- ✅ Job scheduling and routing (round-robin implementation)
 - ✅ Maintaining cluster state (in-memory)
+- ✅ Centralized logging system with gRPC streaming
 - ✅ Exposing a gRPC/REST API for clients, dashboard, and tools
 
 **Current Implementation Status:**
 - ✅ `cmd/orchestrator/main.go` - Main entry point with gRPC & HTTP servers, graceful shutdown
 - ✅ `internal/node/registry.go` - In-memory node registry with heartbeat tracking and stale node cleanup
 - ✅ `internal/orchestrator/service.go` - gRPC service implementation with proper status codes
-- ✅ `api/v1/v1/` - Generated protobuf code
+- ✅ `internal/logging/service.go` - Centralized log streaming service
+- ✅ `api/v1/v1/` - Generated protobuf code including LogStreamer service
 
 **Key internal modules**
 - `node/` — ✅ node registry, health, and telemetry (implemented)
 - `orchestrator/` — ✅ gRPC service implementation (implemented)
-- `scheduler/` — ⏳ pluggable scheduling strategies (interfaces planned)
-- `router/` — ⏳ dispatching jobs to nodes (interfaces planned)
+- `logging/` — ✅ centralized log streaming service (implemented)
+- `scheduler/` — ✅ round-robin job scheduling (implemented)
+- `queue/` — ✅ job queue with persistence support (implemented)
 - `api/v1/v1/` — ✅ protobuf definitions and generated code
 
 **Ports:**
@@ -40,10 +43,11 @@ The orchestrator is the control plane of Orchion. It is responsible for:
 
 A lightweight daemon that runs on each machine in the cluster. It:
 - ✅ Registers with the orchestrator
-- ✅ Sends periodic heartbeats
-- ✅ Reports hardware capabilities
+- ✅ Sends periodic heartbeats (5s default)
+- ✅ Reports comprehensive hardware capabilities (CPU, memory, OS, GPU, power usage)
+- ✅ Updates capabilities periodically (10s default, configurable)
 - ⏳ Executes jobs sent by the orchestrator (executor.go exists but empty)
-- ⏳ Streams logs and telemetry back to the control plane (not implemented)
+- ✅ Structured logging with streaming to orchestrator (implemented)
 
 The agent is intentionally minimal to support:
 - Raspberry Pis
@@ -56,6 +60,7 @@ The agent is intentionally minimal to support:
 - ✅ `internal/capabilities/capabilities.go` - CPU/memory/OS detection using gopsutil for accurate system memory
 - ✅ `internal/heartbeat/heartbeat.go` - gRPC client with auto re-registration on orchestrator restart
 - ✅ `internal/containers/` - Container management (Docker manager, Ollama/vLLM configs)
+- ✅ `shared/logging/` - Structured logging library integration
 - ⏳ `internal/executor/executor.go` - Job execution (empty, placeholder)
 
 ---
@@ -66,8 +71,8 @@ A real‑time UI for monitoring and managing the cluster.
 
 **Current Features:**
 - ✅ Node list with health and capabilities
+- ✅ Real-time log viewer with Server-Sent Events streaming
 - ⏳ Job queue and execution history (not implemented)
-- ⏳ Logs and telemetry (not implemented)
 - ⏳ Agent status and heartbeat visualization (basic display only)
 
 **Future Features:**
@@ -79,6 +84,7 @@ The dashboard communicates with the orchestrator via HTTP REST API (`/api/nodes`
 
 **Current Implementation:**
 - ✅ `src/routes/+page.svelte` - Node list display with error handling
+- ✅ `src/routes/logs/+page.svelte` - Real-time log viewer with SSE streaming
 - ✅ `src/lib/orchion.ts` - HTTP client with error handling, configurable base URL, and TypeScript types
 
 ---
@@ -89,8 +95,27 @@ A central location for all cross‑project types.
 
 **Contents:**
 - ✅ `proto/v1/orchestrator.proto` — protobuf definitions for orchestrator <-> agent communication
+- ⏳ `proto/v1/job.proto` — job model definitions (to be created)
 - ⏳ `ts/` — generated TypeScript types for dashboard + VS Code extension (not yet generated)
 - ⏳ `zod/` — optional runtime validation schemas (not yet implemented)
+
+**Job Model (to be implemented):**
+```typescript
+Job {
+  id: string
+  nodeId?: string
+  status: "pending" | "running" | "completed" | "failed"
+  createdAt: number
+  startedAt?: number
+  finishedAt?: number
+  payload: {
+    model: string
+    prompt: string
+    params?: Record<string, any>
+  }
+  logs?: string[]
+}
+```
 
 This ensures all components speak the same language.
 
@@ -102,7 +127,8 @@ Developer tooling for interacting with Orchion directly from the editor.
 
 **Current Status:**
 - ✅ Extension structure exists
-- ⏳ Basic tree view (placeholder implementation)
+- ✅ Logs tree view with real-time updates from orchestrator
+- ✅ Orchestrator client integration
 
 **Planned features:**
 - Node list tree view
@@ -132,11 +158,20 @@ Orchion/
 │   ├── internal/
 │   │   ├── node/
 │   │   │   └── registry.go            ✅ Node registry implementation
+│   │   ├── orchestrator/
+│   │   │   └── service.go             ✅ gRPC service
+│   │   ├── logging/
+│   │   │   ├── service.go             ✅ Log streaming service
+│   │   │   └── streamer.go            ✅ Log broadcaster
+│   │   ├── scheduler/
+│   │   │   └── scheduler.go           ✅ Job scheduler
+│   │   ├── queue/
+│   │   │   └── queue.go               ✅ Job queue
 │   │   └── orchestrator/
-│   │       └── service.go             ✅ gRPC service
+│   │       └── processor.go           ✅ Job processor
 │   ├── api/v1/v1/                     ✅ Generated protobuf files
 │   ├── go.mod                         ✅ Go module
-│   └── Makefile                       ✅ Protobuf generation
+│   └── Makefile                       ✅ Protobuf generation (component-specific)
 │
 ├── node-agent/
 │   ├── cmd/node-agent/
@@ -150,7 +185,7 @@ Orchion/
 │   │   │   └── executor.go            ⏳ Empty placeholder
 │   │   └── proto/v1/                  ✅ Generated protobuf files
 │   ├── go.mod                         ✅ Go module
-│   └── Makefile                       ✅ Protobuf generation
+│   └── Makefile                       ✅ Protobuf generation (component-specific)
 │
 ├── dashboard/
 │   ├── src/
@@ -161,8 +196,11 @@ Orchion/
 │   └── package.json                   ✅ SvelteKit config
 │
 ├── shared/
-│   └── proto/v1/
-│       └── orchestrator.proto         ✅ Protocol definitions
+│   ├── proto/v1/
+│   │   └── orchestrator.proto         ✅ Protocol definitions
+│   └── logging/
+│       ├── logger.go                  ✅ Structured logging library
+│       └── go.mod                     ✅ Logging module
 │
 ├── docs/                              ✅ Documentation
 └── README.md                          ✅ Main README
@@ -184,11 +222,12 @@ Orchion/
 
 ### 3. **Dashboard → Orchestrator**
    - ✅ Fetch cluster state (via HTTP `GET /api/nodes`)
+   - ✅ Stream logs in real-time (via SSE `GET /api/logs`)
    - ⏳ Submit jobs (not implemented)
-   - ⏳ View logs (not implemented)
 
 ### 4. **VS Code Extension → Orchestrator**
-   - ⏳ Developer‑focused interactions (not implemented)
+   - ✅ Fetch logs from orchestrator (via HTTP `GET /api/logs`)
+   - ⏳ Fetch nodes and submit jobs (not implemented)
 
 ---
 
@@ -197,10 +236,13 @@ Orchion/
 ### ✅ Working Features
 - Node registration via gRPC with proper error handling
 - Heartbeat tracking with automatic stale node cleanup
-- Accurate capability detection (CPU cores, system memory via gopsutil, OS)
+- Comprehensive capability detection (CPU cores, system memory, OS, GPU type/VRAM, power usage)
+- Periodic capability updates (configurable interval, default 10s)
 - HTTP REST API for dashboard with CORS support
 - Dashboard can display registered nodes with error handling
 - Auto re-registration when orchestrator restarts
+- Centralized structured logging system (JSON logs, gRPC streaming, HTTP SSE)
+- Real-time log streaming to dashboard and VS Code extension
 - Graceful shutdown handling for all components
 - Proper gRPC status codes throughout (codes.InvalidArgument, codes.NotFound, etc.)
 - Container management infrastructure (Docker, Ollama, vLLM)
@@ -210,14 +252,14 @@ Orchion/
 - VS Code extension (structure exists, needs actual node fetching)
 
 ### ❌ Not Yet Implemented
-- Job execution (executor.go is empty, but container management ready)
-- Job scheduling (scheduler/router not implemented)
-- Persistent storage (everything is in-memory)
-- Authentication/authorization
-- Log streaming
+- Job execution (executor.go is empty, but container management ready) **HIGHEST PRIORITY**
+- Log streaming completion (node-agent → orchestrator gRPC streaming) **HIGH PRIORITY**
+- Persistent log storage (SQLite-based) **MEDIUM PRIORITY**
+- Persistent storage (SQLite recommended, not Postgres yet)
+- Authentication/authorization (moved down in priority)
 - Node unregistration API
 - TypeScript type generation from protobuf
-- Docker/Kubernetes deployment configs
+- Docker/Kubernetes deployment configs (moved down in priority)
 
 ---
 
@@ -233,4 +275,11 @@ Orchion/
 
 ## Next Steps
 
-See `docs/roadmap.md` for planned features and priorities.
+**Immediate Priority:** Finish the Job Execution Loop
+- Implement executor.go (call container manager, run Ollama/vLLM containers, stream logs)
+- Complete log streaming (node-agent → orchestrator gRPC streaming)
+- Add persistent log storage (SQLite-based)
+
+**Why this matters:** Your architecture, node agent, and container manager are already in place. You're 80% of the way to a functional inference cluster. This step turns Orchion from "node registry" into "actual orchestrator."
+
+See `docs/roadmap.md` for detailed planned features, priorities, and week-by-week timeline.

@@ -13,6 +13,16 @@ A practical guide to setting up the Orchion development environment across Windo
 .\shared\scripts\setup-all.ps1
 ```
 
+### Format Code (before committing)
+```powershell
+.\shared\scripts\format-all.ps1
+```
+
+### Lint Code (check code quality)
+```powershell
+.\shared\scripts\lint-all.ps1
+```
+
 ### Build Everything
 ```powershell
 .\shared\scripts\build-all.ps1
@@ -30,7 +40,7 @@ A practical guide to setting up the Orchion development environment across Windo
 
 ### Test the REST API
 ```powershell
-.\shared\scripts\test-api.ps1
+.\tests\test-api.ps1
 ```
 
 ### Clean Build Artifacts
@@ -50,6 +60,42 @@ Before setting up Orchion, ensure you have:
 - **PowerShell** (comes with Windows)
 - **VS Code** (recommended IDE)
 - **Chocolatey** (for easy package management)
+
+---
+
+## 🎯 Code Quality Tools
+
+Orchion uses automated tools to ensure consistent code formatting and quality across all components. These tools are installed automatically by the setup script.
+
+### Code Formatting
+- **Go**: `gofmt` + `goimports` (installed with Go)
+- **TypeScript/JavaScript**: Prettier (installed via npm)
+
+### Code Linting
+- **Go**: `golangci-lint` (comprehensive linter with 30+ rules including security checks)
+- **TypeScript/JavaScript**: ESLint + Prettier integration
+
+### Configuration Files
+The project includes shared configuration files at the root level:
+- `.prettierrc` - Prettier formatting rules
+- `.prettierignore` - Files to exclude from formatting
+- `.golangci.yml` - Go linting configuration
+- `.eslintignore` - Files to exclude from ESLint
+- `.editorconfig` - Editor settings for consistent indentation
+
+**Note:** Individual components may have their own overrides (e.g., dashboard has Svelte-specific Prettier config).
+
+### Automated Scripts
+Use these scripts to format and lint the entire codebase:
+```powershell
+# Format all code (modifies files)
+.\shared\scripts\format-all.ps1
+
+# Lint all code (shows warnings, doesn't fail)
+.\shared\scripts\lint-all.ps1
+```
+
+See `shared/scripts/README.md` for detailed script documentation.
 
 ---
 
@@ -91,7 +137,7 @@ choco install protoc
 protoc --version
 ```
 
-### 3. Install Make (for Makefiles)
+### 3. Install Make (Optional, for Component Makefiles)
 
 **Using Chocolatey:**
 ```powershell
@@ -103,7 +149,7 @@ choco install make
 make --version
 ```
 
-**Note:** Makefiles are used for protobuf generation. You can also run `protoc` commands directly if you prefer.
+**Note:** Component Makefiles are used for protobuf generation. PowerShell scripts will fall back to direct `protoc` commands if `make` is not available.
 
 ### 4. Install Go Protobuf Plugins
 
@@ -138,6 +184,44 @@ https://nodejs.org/
 node --version
 npm --version
 ```
+
+### 6. Install Container Runtime (Podman preferred)
+
+**Why Podman?** Podman is a daemonless container engine that doesn't require root privileges and is more secure than Docker.
+
+**Option A: Install Podman (Recommended)**
+
+**Using Chocolatey:**
+```powershell
+choco install podman
+```
+
+**Manual Installation:**
+1. Download from https://github.com/containers/podman/releases/latest
+2. Install and configure
+3. Initialize: `podman machine init` (on Windows)
+4. Start: `podman machine start`
+
+**Option B: Install Docker (Alternative)**
+
+**Using Chocolatey:**
+```powershell
+choco install docker-desktop
+```
+
+**Or download from:**
+https://www.docker.com/products/docker-desktop/
+
+**Verify Container Runtime:**
+```powershell
+# Try Podman first (preferred)
+podman version
+
+# If Podman not available, try Docker
+docker version
+```
+
+**Note:** Orchion will automatically detect and use the available container runtime (Podman first, then Docker).
 
 ---
 
@@ -187,8 +271,9 @@ cd Orchion
 ```
 
 This script will:
-- Check prerequisites (Go, Node.js, npm, protoc, Docker)
+- Check prerequisites (Go, Node.js, npm, protoc, Podman/Docker)
 - Install Go protobuf plugins if missing
+- Install Go linting/formatting tools (`golangci-lint`, `goimports`) if missing
 - Install Go dependencies for orchestrator and node-agent
 - Generate protobuf files
 - Install dashboard npm dependencies
@@ -267,9 +352,9 @@ go build -o node-agent.exe ./cmd/node-agent
 
 ## 🛠️ VS Code Configuration
 
-### Makefile Configuration
+### Component Makefile Configuration
 
-Makefiles require **literal TAB characters** and **LF** line endings.
+Component Makefiles (in `orchestrator/` and `node-agent/`) require **literal TAB characters** and **LF** line endings.
 
 Add to VS Code `settings.json`:
 ```json
@@ -290,9 +375,12 @@ Add to VS Code `settings.json`:
 ### Recommended VS Code Extensions
 
 - **Go** (by Google) - Go language support
-- **Protocol Buffers** - `.proto` file syntax highlighting
-- **Svelte for VS Code** - SvelteKit support
-- **Make** - Makefile support
+- **Protocol Buffers** (Peter Suter) - `.proto` file syntax highlighting
+- **Svelte for VS Code** (Svelte) - SvelteKit support
+- **Make** (ms-vscode.makefile-tools) - Makefile support
+- **Prettier** (Prettier) - Code formatting (uses project config)
+- **ESLint** (Microsoft) - JavaScript/TypeScript linting
+- **EditorConfig** (EditorConfig) - Consistent editor settings
 
 ---
 
@@ -362,6 +450,50 @@ go mod download
 
 ---
 
+### ❌ `'golangci-lint' is not recognized`
+
+**Cause:** Go linting tool not installed or not on PATH
+**Fix:**
+```powershell
+go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+```
+Or run the setup script: `.\shared\scripts\setup-all.ps1`
+
+---
+
+### ❌ `'goimports' is not recognized`
+
+**Cause:** Go import formatting tool not installed or not on PATH
+**Fix:**
+```powershell
+go install golang.org/x/tools/cmd/goimports@latest
+```
+Or run the setup script: `.\shared\scripts\setup-all.ps1`
+
+---
+
+### ❌ Prettier/ESLint errors in VS Code
+
+**Cause:** Extension not using project configuration
+**Fix:**
+1. Install Prettier and ESLint extensions
+2. VS Code should auto-detect `.prettierrc` and `eslint.config.*` files
+3. If not working, check VS Code settings:
+   - Ensure "Format on Save" is enabled
+   - Check "Prettier: Config Path" points to project root
+
+---
+
+### ❌ `format-all.ps1` fails with permission errors
+
+**Cause:** Files are read-only or VS Code has them locked
+**Fix:**
+1. Close VS Code
+2. Ensure no processes are using the files
+3. Run the script again
+
+---
+
 ### ❌ Dashboard: `npm install` fails
 
 **Causes:**
@@ -388,14 +520,18 @@ After setup, verify everything works:
 - [ ] `make --version` shows make installed
 - [ ] `protoc-gen-go --version` works
 - [ ] `protoc-gen-go-grpc --version` works
+- [ ] `golangci-lint --version` works (Go linting)
+- [ ] `goimports -h` works (Go formatting)
 - [ ] `make proto` works in both `orchestrator/` and `node-agent/`
 - [ ] `go build ./cmd/orchestrator` works in `orchestrator/`
 - [ ] `go build ./cmd/node-agent` works in `node-agent/`
 - [ ] `npm install` works in `dashboard/`
+- [ ] `.\shared\scripts\lint-all.ps1` runs without critical errors
+- [ ] `.\shared\scripts\format-all.ps1` completes successfully
 
 ---
 
-## 📄 Example Working Makefile
+## 📄 Example Component Makefiles
 
 **Orchestrator (`orchestrator/Makefile`):**
 ```makefile
@@ -448,11 +584,14 @@ go run ./cmd/node-agent
 ```
 
 **Available scripts:**
+- `.\shared\scripts\setup-all.ps1` - Initial setup (install dependencies, tools)
+- `.\shared\scripts\format-all.ps1` - Format all code
+- `.\shared\scripts\lint-all.ps1` - Lint all code
 - `.\shared\scripts\build-all.ps1` - Build all components
 - `.\shared\scripts\run-all.ps1` - Run all components
 - `.\shared\scripts\dev-dashboard.ps1` - Start dashboard dev server
 - `.\shared\scripts\test-all.ps1` - Run all tests
-- `.\shared\scripts\test-api.ps1` - Test REST API
+- `.\tests\test-api.ps1` - Test REST API
 - `.\shared\scripts\clean-all.ps1` - Clean build artifacts
 
 See `shared/scripts/README.md` for complete script documentation.
@@ -472,6 +611,10 @@ See `shared/scripts/README.md` for complete script documentation.
 
 ### Daily Development
 ```powershell
+# Code quality (recommended before committing)
+.\shared\scripts\format-all.ps1
+.\shared\scripts\lint-all.ps1
+
 # Build
 .\shared\scripts\build-all.ps1
 
@@ -479,7 +622,7 @@ See `shared/scripts/README.md` for complete script documentation.
 .\shared\scripts\run-all.ps1
 
 # Test
-.\shared\scripts\test-api.ps1
+.\tests\test-api.ps1
 ```
 
 ### After Changing Protobuf
