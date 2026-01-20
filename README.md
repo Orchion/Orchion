@@ -215,14 +215,22 @@ cd ../node-agent && make proto
 
 ### Testing
 
-```bash
-# Test orchestrator
-cd orchestrator
-go test ./...
+Orchion requires **95% unit test coverage** across all Go components.
 
-# Test node agent
-cd node-agent
-go test ./...
+```bash
+# Run all tests with coverage check
+.\shared\scripts\test-all.ps1 -CoverageThreshold
+
+# Or test individual components
+cd orchestrator
+make test-coverage-threshold
+
+cd ../node-agent
+make test-coverage-threshold
+
+# Generate coverage reports
+cd orchestrator
+make test-coverage  # Creates coverage.html
 ```
 
 ### Code Formatting

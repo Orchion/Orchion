@@ -1,17 +1,30 @@
 # Run tests for all Orchion components
-# Usage: .\shared\scripts\test-all.ps1
+# Usage: .\shared\scripts\test-all.ps1 [-Coverage] [-CoverageThreshold]
+
+param(
+    [switch]$Coverage,
+    [switch]$CoverageThreshold
+)
 
 $ErrorActionPreference = "Stop"
 Import-Module "$PSScriptRoot\Orchion.Common.psm1" -Force
 $allPassed = $true
 
-Write-Host "Running tests for all components..." -ForegroundColor Cyan
+if ($Coverage -or $CoverageThreshold) {
+    Write-Host "Running tests with coverage analysis..." -ForegroundColor Cyan
+} else {
+    Write-Host "Running tests for all components..." -ForegroundColor Cyan
+}
 Write-Host ""
 
 # Test Go components
 foreach ($component in $script:Components.Go) {
     try {
-        Test-GoComponent -Component $component
+        if ($Coverage -or $CoverageThreshold) {
+            Test-GoComponentWithCoverage -Component $component -CheckThreshold:$CoverageThreshold
+        } else {
+            Test-GoComponent -Component $component
+        }
         Write-Host "[PASS] $component tests passed" -ForegroundColor Green
     } catch {
         Write-Host "[FAIL] $component tests failed: $_" -ForegroundColor Red

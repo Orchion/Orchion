@@ -18,5 +18,8 @@ func main() {
 	fmt.Printf("  GPU Type: %s\n", caps.GpuType)
 	fmt.Printf("  GPU VRAM Total: %s\n", caps.GpuVramTotal)
 	fmt.Printf("  GPU VRAM Available: %s\n", caps.GpuVramAvailable)
-	fmt.Printf("  Power Usage: %s\n", caps.PowerUsage)
+	fmt.Printf("  GPU VRAM Used: %s\n", caps.GpuVramUsed)
+	fmt.Printf("  GPU Temperature: %s\n", caps.GpuTemperature)
+	fmt.Printf("  GPU Power Usage: %s\n", caps.GpuPowerUsage)
+	fmt.Printf("  System Power Usage: %s\n", caps.PowerUsage)
 }

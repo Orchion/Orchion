@@ -405,7 +405,7 @@ The orchestrator-side job execution system is complete. You're 90% of the way to
 ### 📅 Timeline
 - **Phase 1 (Foundations):** ✅ Complete
 - **Phase 2 (Core Functionality):** ⏳ ~90% complete (node management done, orchestrator job system done, node-agent executor is next)
-- **Week 1:** Complete job execution loop (node-agent executor + testing)
+- **Week 1:** Complete job execution loop (node-agent executor + comprehensive testing infrastructure)
 - **Week 2:** Dashboard enhancements (auto-refresh, job queue, log streaming)
 - **Week 3:** VS Code extension (fetch nodes, submit jobs, logs)
 - **Week 4:** SQLite persistence + TS type generation

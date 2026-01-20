@@ -159,6 +159,45 @@ function Test-GoComponent {
     Write-Success "$Component tests passed"
 }
 
+function Test-GoComponentWithCoverage {
+    param(
+        [string]$Component,
+        [switch]$CheckThreshold
+    )
+
+    $coverageThreshold = 95.0
+
+    Write-Step "Testing $Component with coverage analysis..."
+    Invoke-InDirectory "$script:ProjectRoot\$Component" {
+        # Run tests with coverage
+        go test -race -coverprofile=coverage.out -covermode=atomic ./...
+
+        # Generate HTML report
+        go tool cover -html=coverage.out -o coverage.html
+
+        # Get coverage percentage
+        $coverageLine = go tool cover -func=coverage.out | Select-String -Pattern "total:" | Select-Object -Last 1
+        if ($coverageLine) {
+            $coveragePercent = [regex]::Match($coverageLine, '(\d+\.\d+)%').Groups[1].Value
+            Write-Success "$Component coverage: $coveragePercent%"
+
+            if ($CheckThreshold) {
+                $coverageValue = [double]$coveragePercent
+                if ($coverageValue -lt $coverageThreshold) {
+                    Write-Error "Coverage below $coverageThreshold% threshold: $coveragePercent%"
+                    throw "Coverage requirement not met"
+                } else {
+                    Write-Success "Coverage meets $coverageThreshold% threshold"
+                }
+            }
+
+            Write-Info "Coverage report: $Component/coverage.html"
+        } else {
+            Write-Warning "Could not determine coverage percentage"
+        }
+    }
+}
+
 function Lint-GoComponent {
     param([string]$Component)
 

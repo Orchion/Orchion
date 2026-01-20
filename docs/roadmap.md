@@ -173,6 +173,7 @@ This roadmap outlines the planned evolution of Orchion from early prototype to a
    - Execute jobs and return results to orchestrator
    - Add basic log streaming
 2. **End-to-end testing** (High Priority)
+   - Complete unit test coverage (95%+ achieved on core components)
    - Test complete job submission → execution → completion flow
    - Verify OpenAI-compatible API gateway works
 3. **Log streaming completion** (High Priority)
