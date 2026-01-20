@@ -119,22 +119,83 @@ Removes all build artifacts.
 ---
 
 ### `test-all.ps1`
-Runs tests for all Orchion components.
+Runs tests for all Orchion components with optional coverage analysis.
 
 **Usage:**
 ```powershell
+# Run all unit tests
 .\shared\scripts\test-all.ps1
+
+# Run tests with coverage analysis
+.\shared\scripts\test-all.ps1 -Coverage
+
+# Run tests with coverage threshold checking (95%)
+.\shared\scripts\test-all.ps1 -CoverageThreshold
 ```
 
 **What it does:**
 - Runs Go tests for orchestrator
 - Runs Go tests for node-agent
 - Runs npm tests for dashboard
+- With `-Coverage`: Generates coverage reports for each Go component
+- With `-CoverageThreshold`: Enforces 95% coverage requirement and fails if not met
 - Reports pass/fail for each component
 
 **Prerequisites:**
 - Go components must be buildable
 - Dashboard dependencies installed (auto-installs if missing)
+
+---
+
+### `check-coverage.ps1`
+Checks test coverage across all Go components and enforces the 95% requirement.
+
+**Usage:**
+```powershell
+# Check coverage with default 95% threshold
+.\shared\scripts\check-coverage.ps1
+
+# Check coverage with custom threshold
+.\shared\scripts\check-coverage.ps1 -Threshold 90.0
+
+# Generate HTML coverage reports
+.\shared\scripts\check-coverage.ps1 -GenerateReports
+
+# Fail on threshold violation
+.\shared\scripts\check-coverage.ps1 -FailOnThreshold
+```
+
+**What it does:**
+- Runs tests with coverage analysis for all Go components
+- Displays coverage percentage for each component
+- Shows average coverage across all components
+- Enforces coverage thresholds (default 95%)
+- Optionally generates HTML coverage reports
+
+**Prerequisites:**
+- Go components must be testable
+- Components must be buildable
+
+---
+
+### `coverage-status.ps1`
+Provides a quick overview of current test coverage status across all components.
+
+**Usage:**
+```powershell
+.\shared\scripts\coverage-status.ps1
+```
+
+**What it does:**
+- Shows coverage percentage for each Go component
+- Displays total test count across components
+- Calculates average coverage
+- Uses color coding to indicate compliance with 95% requirement
+- Provides hints for generating detailed reports
+
+**Prerequisites:**
+- Go components must be testable
+- Components must be buildable
 
 ---
 

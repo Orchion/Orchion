@@ -1,0 +1,69 @@
+name: Test Suite
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: Install Go dependencies
+      run: |
+        go mod tidy
+      working-directory: orchestrator
+
+    - name: Install Go dependencies (node-agent)
+      run: |
+        go mod tidy
+      working-directory: node-agent
+
+    - name: Install Go dependencies (shared/logging)
+      run: |
+        go mod tidy
+      working-directory: shared/logging
+
+    - name: Install Node.js dependencies
+      run: |
+        npm install
+      working-directory: dashboard
+
+    - name: Install Node.js dependencies (vscode-extension)
+      run: |
+        npm install
+      working-directory: vscode-extension/orchion-tools
+
+    - name: Run linting
+      run: .\shared\scripts\lint-all.ps1
+
+    - name: Run tests with coverage
+      run: .\shared\scripts\test-all.ps1 -Coverage
+
+    - name: Check coverage threshold (95%)
+      run: .\shared\scripts\check-coverage.ps1 -Threshold 95.0 -FailOnThreshold
+
+    - name: Upload coverage reports
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: coverage-reports
+        path: |
+          orchestrator/coverage.html
+          node-agent/coverage.html
+          shared/logging/coverage.html
